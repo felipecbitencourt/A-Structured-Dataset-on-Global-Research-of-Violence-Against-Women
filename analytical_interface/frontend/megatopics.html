@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hub - Macro (Megatopics)</title>
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+      .panel { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; margin-bottom: 12px; }
+      .filters { display: grid; grid-template-columns: repeat(7, minmax(120px, 1fr)); gap: 8px; }
+      .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+      select, input, button { padding: 8px; border-radius: 6px; border: 1px solid #bbb; }
+      table { width: 100%; border-collapse: collapse; }
+      th, td { padding: 6px; border-bottom: 1px solid #e6e6e6; text-align: left; font-size: 12px; }
+      .link-button { background: #1f4b99; color: #fff; border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <header class="hub-site-header" role="banner">
+      <a class="hub-brand" href="./index.html" data-i18n="homeTitle">Hub de Análise Científica</a>
+      <nav class="hub-site-nav" data-i18n-aria-label="navAriaLabel" aria-label="Navegação principal do hub">
+        <a href="./index.html" class="hub-nav-link" data-i18n="navHome">Início</a>
+        <a href="./articles.html" class="hub-nav-link" id="linkArticles" data-i18n="navMicro">Articles (Micro)</a>
+        <a href="./topics.html" class="hub-nav-link" id="linkTopics" data-i18n="navMeso">Topics (Meso)</a>
+        <a href="./megatopics.html" class="hub-nav-link is-active" data-i18n="navMacro">Megatopics (Macro)</a>
+      </nav>
+      <button type="button" id="hub-a11y-toggle" class="hub-a11y-toggle" aria-expanded="false" aria-controls="hub-a11y-panel" data-i18n-aria-label="a11yToggleAria" aria-label="Abrir ou fechar opções de acessibilidade">
+        <span data-i18n="a11yToggleLabel">Acessibilidade</span>
+        <span class="hub-a11y-toggle__caret" aria-hidden="true">▼</span>
+      </button>
+    </header>
+    <main id="main-content">
+    <h1 data-i18n="navMacro">Megatopics (Macro)</h1>
+
+    <div class="panel filters">
+      <input id="yearMin" type="number" placeholder="Ano mín." data-i18n-placeholder="placeholderYearMin" />
+      <input id="yearMax" type="number" placeholder="Ano máx." data-i18n-placeholder="placeholderYearMax" />
+      <select id="country"><option value="" data-i18n="optionCountryAll">País (todos)</option></select>
+      <select id="topic"><option value="" data-i18n="optionTopicAll">Tópico (todos)</option></select>
+      <select id="megatopic"><option value="" data-i18n="optionMegatopicAll">Megatópico (todos)</option></select>
+      <select id="researchFlow"><option value="" data-i18n="optionFlowAll">Research flow (todos)</option></select>
+      <button id="applyFilters" data-i18n="applyFilters">Aplicar</button>
+    </div>
+    <div class="panel">
+      <strong id="selectedCounter">0 artigos selecionados</strong>
+      <span id="consistencyHint" style="margin-left:10px;color:#666;"></span>
+      <span id="deltaCounter" style="margin-left:10px;color:#666;"></span>
+      <button id="exportCsvBtn" style="margin-left:10px;" data-i18n="exportCsv">Exportar CSV filtrado</button>
+      <button id="exportJsonBtn" data-i18n="exportJson">Exportar JSON filtrado</button>
+      <button id="exportFiltersBtn" data-i18n="exportFilters">Exportar filtros</button>
+      <div id="emptyState" style="display:none;margin-top:8px;color:#9a1f1f;" data-i18n="noResults">Nenhum resultado para os filtros atuais.</div>
+    </div>
+
+    <div class="charts">
+      <div class="panel"><h3 data-i18n="macroChartCount">Artigos filtrados por megatópico</h3><div id="chartMegaCount"></div></div>
+      <div class="panel"><h3 data-i18n="macroChartShare">Participação de artigos (%)</h3><div id="chartMegaShare"></div></div>
+      <div class="panel"><h3 data-i18n="macroChartCoherence">Coerência média (Cv)</h3><div id="chartMegaCoherence"></div></div>
+      <div class="panel"><h3 data-i18n="macroChartCoherenceNorm">Coerência normalizada</h3><div id="chartMegaCoherenceNorm"></div></div>
+      <div class="panel"><h3 data-i18n="macroChartFlow">Research flow (%)</h3><div id="chartMegaFlow"></div></div>
+    </div>
+
+    <div class="panel">
+      <h3 data-i18n="macroTableTitle">Síntese agregada de megatópicos</h3>
+      <table>
+        <thead><tr><th data-i18n="colMegatopic">Megatópico</th><th data-i18n="colDescription">Descrição</th><th data-i18n="colFilteredArticles">Artigos filtrados</th><th>Cv médio</th><th data-i18n="colGrowth">Crescimento</th><th data-i18n="colGoMeso">Ir para meso</th></tr></thead>
+        <tbody id="megaBody"></tbody>
+      </table>
+    </div>
+
+    <script type="module" src="./js/megatopics.page.js"></script>
+    <script src="./js/accessibility.js"></script>
+    </main>
+  </body>
+</html>

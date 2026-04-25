@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hub - Início</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+      .panel { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+      .cards { display: grid; grid-template-columns: repeat(4, minmax(120px, 1fr)); gap: 8px; }
+      .card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 10px; }
+      .label { font-size: 12px; color: #555; }
+      .value { font-size: 22px; font-weight: bold; }
+      .paths { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 10px; }
+      .path-card { border: 1px solid #ddd; border-radius: 8px; padding: 10px; background: #fff; }
+      .actions a {
+        display: inline-block;
+        margin-right: 8px;
+        margin-top: 8px;
+        text-decoration: none;
+        border: 1px solid #1f4b99;
+        color: #1f4b99;
+        padding: 6px 10px;
+        border-radius: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <header class="hub-site-header" role="banner">
+      <a class="hub-brand" href="./index.html" data-i18n="homeTitle">Hub de Análise Científica</a>
+      <nav class="hub-site-nav" data-i18n-aria-label="navAriaLabel" aria-label="Navegação principal do hub">
+        <a href="./index.html" class="hub-nav-link is-active" data-i18n="navHome">Início</a>
+        <a href="./articles.html" class="hub-nav-link" data-i18n="navMicro">Articles (Micro)</a>
+        <a href="./topics.html" class="hub-nav-link" data-i18n="navMeso">Topics (Meso)</a>
+        <a href="./megatopics.html" class="hub-nav-link" data-i18n="navMacro">Megatopics (Macro)</a>
+      </nav>
+      <button type="button" id="hub-a11y-toggle" class="hub-a11y-toggle" aria-expanded="false" aria-controls="hub-a11y-panel" data-i18n-aria-label="a11yToggleAria" aria-label="Abrir ou fechar opções de acessibilidade">
+        <span data-i18n="a11yToggleLabel">Acessibilidade</span>
+        <span class="hub-a11y-toggle__caret" aria-hidden="true">▼</span>
+      </button>
+    </header>
+
+    <main id="main-content">
+      <section class="panel">
+        <h1 data-i18n="homeTitle">Hub de Análise Científica</h1>
+        <p data-i18n="homeIntro">
+          Interface estática para exploração reprodutível em três níveis: micro (artigos), meso (tópicos) e macro (megatópicos).
+        </p>
+        <p data-i18n="homeGuide">
+          Use os caminhos abaixo para iniciar pela pergunta de pesquisa, e não apenas pelo nível de análise.
+        </p>
+      </section>
+
+      <section class="cards">
+        <div class="card"><div class="label" data-i18n="kpiArticles">Artigos</div><div class="value" id="kpiArticles">-</div></div>
+        <div class="card"><div class="label" data-i18n="kpiTopics">Tópicos</div><div class="value" id="kpiTopics">-</div></div>
+        <div class="card"><div class="label" data-i18n="kpiMegatopics">Megatópicos</div><div class="value" id="kpiMegatopics">-</div></div>
+        <div class="card"><div class="label" data-i18n="kpiVersion">Versão</div><div class="value" id="kpiVersion">-</div></div>
+      </section>
+
+      <section class="panel">
+        <h2 data-i18n="homeByGoal">Escolha por objetivo</h2>
+        <div class="paths">
+          <article class="path-card">
+            <strong data-i18n="navMicro">Articles (Micro)</strong>
+            <p data-i18n="homeMicroWhenUse">Quando usar: rastrear evidências detalhadas por país, ano e fluxo.</p>
+            <div class="actions"><a href="./articles.html" data-i18n="homeOpenMicro">Abrir micro</a></div>
+          </article>
+          <article class="path-card">
+            <strong data-i18n="navMeso">Topics (Meso)</strong>
+            <p data-i18n="homeMesoWhenUse">Quando usar: comparar tópicos por volume, coerência e crescimento.</p>
+            <div class="actions"><a href="./topics.html" data-i18n="homeOpenMeso">Abrir meso</a></div>
+          </article>
+          <article class="path-card">
+            <strong data-i18n="navMacro">Megatopics (Macro)</strong>
+            <p data-i18n="homeMacroWhenUse">Quando usar: sintetizar blocos temáticos e tendências gerais.</p>
+            <div class="actions"><a href="./megatopics.html" data-i18n="homeOpenMacro">Abrir macro</a></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <strong data-i18n="releaseLabel">Release:</strong> <span id="releaseDate">-</span><br />
+        <strong data-i18n="hashLabel">Hash de origem:</strong> <span id="hashPreview">-</span>
+        <div class="actions">
+          <a href="./data/meta.json" data-i18n="homeMeta">Ver metadados de release</a>
+          <a href="../docs/README.md" data-i18n="homeQuickGuide">Guia rápido</a>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./js/home.page.js"></script>
+    <script src="./js/accessibility.js"></script>
+  </body>
+</html>

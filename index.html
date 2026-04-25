@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Global Research on VAW</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; background: #f7f7f7; color: #222; }
+      .container { max-width: 980px; margin: 0 auto; }
+      .panel { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 18px; margin-bottom: 14px; }
+      .cards { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 10px; }
+      .card { border: 1px solid #e3e3e3; border-radius: 8px; padding: 12px; background: #fafafa; }
+      .btn { display: inline-block; padding: 8px 12px; border: 1px solid #1f4b99; border-radius: 8px; text-decoration: none; color: #1f4b99; font-weight: bold; background: #f5f9ff; margin-right: 8px; margin-top: 6px; }
+      code { background: #f1f1f1; border-radius: 4px; padding: 1px 4px; }
+    </style>
+  </head>
+  <body>
+    <main class="container">
+      <section class="panel">
+        <h1>A Structured Dataset on Global Research of Violence Against Women</h1>
+        <p>This repository is organized into three modules.</p>
+        <a class="btn" href="./analytical_interface/frontend/index.html">Open analytical interface</a>
+      </section>
+
+      <section class="panel cards">
+        <article class="card">
+          <h3>Topic modeling</h3>
+          <p>NMF-based pipeline with text preprocessing, TF-IDF vectorization, and parameter configuration.</p>
+          <a class="btn" href="./topic_modeling/README.md">Module README</a>
+        </article>
+        <article class="card">
+          <h3>ML-assisted classification</h3>
+          <p>Supervised screening pipeline with preprocessing, vectorization, logistic regression, and self-training.</p>
+          <a class="btn" href="./ml_classification/README.md">Module README</a>
+        </article>
+        <article class="card">
+          <h3>Analytical interface</h3>
+          <p>Static HTML/JavaScript app for micro, meso, and macro dataset exploration.</p>
+          <a class="btn" href="./analytical_interface/README.md">Module README</a>
+        </article>
+      </section>
+
+      <section class="panel">
+        <p>Main entrypoint for GitHub Pages: <code>/index.html</code></p>
+        <p>Interactive app entrypoint: <code>/analytical_interface/frontend/index.html</code></p>
+      </section>
+    </main>
+  </body>
+</html>
