@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Hub de Análise — Nova Interface (canvas)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  /* Canvas-side: ensure each artboard contains the shell properly */
+  .hub-frame { width: 100%; height: 100%; overflow: auto; background: var(--paper); }
+  .hub-frame .shell { min-height: 100%; }
+  /* Variant-B (compact analytical) tweaks */
+  .v-compact .shell { grid-template-columns: 220px 1fr 280px; }
+  /* Variant-C (dark terminal) tokens override */
+  .v-dark { --paper: #0E1114; --paper-2: #14181D; --paper-3: #1C2127; --ink: #E8E6E0; --ink-2: #C9C6BE; --ink-3: #8A8F97; --ink-4: #5A6069; --rule: rgba(232,230,224,0.12); --rule-strong: rgba(232,230,224,0.28); --accent: oklch(0.7 0.09 210); --accent-soft: oklch(0.28 0.05 210); --accent-ink: oklch(0.78 0.09 210); }
+</style>
+</head>
+<body>
+<div id="canvas-root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="js/shell.jsx"></script>
+<script type="text/babel" src="js/charts.jsx"></script>
+<script type="text/babel" src="js/pages-1.jsx"></script>
+<script type="text/babel" src="js/pages-2.jsx"></script>
+<script type="text/babel" src="js/app.jsx"></script>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "density": "comfortable"
+}/*EDITMODE-END*/;
+
+function Frame({ variant, level, density, theme }) {
+  const cls = "hub-frame " + (variant === "compact" ? "v-compact" : "") + " " + (variant === "dark" || theme === "dark" ? "v-dark" : "");
+  return (
+    <div className={cls} data-density={density} data-theme={(variant === "dark" || theme === "dark") ? "dark" : "light"}>
+      <HubApp variant={variant} initialLevel={level} />
+    </div>
+  );
+}
+
+function Root() {
+  const [tweaks, setTweaks] = useTweaks ? useTweaks(TWEAKS) : [TWEAKS, () => {}];
+  // Apply density + theme to the document root so CSS vars cascade
+  useEffect(() => {
+    document.documentElement.setAttribute("data-density", tweaks.density);
+    document.documentElement.setAttribute("data-theme", tweaks.theme);
+  }, [tweaks.density, tweaks.theme]);
+
+  return (
+    <>
+      <DesignCanvas title="Hub de Análise — três direções" subtitle="Editorial · Analítico compacto · Terminal escuro">
+        <DCSection id="overview" title="01 · Visão geral integrada (Home)" subtitle="Ponto de entrada com capacidades, escalas e métricas de release">
+          <DCArtboard id="a-home-editorial" label="A · Editorial paper" width={1280} height={900}>
+            <Frame variant="editorial" level="home" density={tweaks.density} theme={tweaks.theme} />
+          </DCArtboard>
+          <DCArtboard id="b-home-compact" label="B · Analítico compacto" width={1280} height={900}>
+            <Frame variant="compact" level="home" density="compact" theme={tweaks.theme} />
+          </DCArtboard>
+          <DCArtboard id="c-home-dark" label="C · Terminal escuro" width={1280} height={900}>
+            <Frame variant="dark" level="home" density={tweaks.density} theme="dark" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="macro" title="02 · Macro — Megatópicos" subtitle="Síntese dos 7 blocos temáticos: dominância, coerência × crescimento, tabela sinóptica">
+          <DCArtboard id="a-macro" label="A · Editorial" width={1280} height={1100}>
+            <Frame variant="editorial" level="macro" density={tweaks.density} theme={tweaks.theme} />
+          </DCArtboard>
+          <DCArtboard id="b-macro" label="B · Compacto" width={1280} height={1100}>
+            <Frame variant="compact" level="macro" density="compact" theme={tweaks.theme} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="meso" title="03 · Meso — Tópicos & comparação A/B" subtitle="Ranking sinóptico de 32 tópicos + ficha lado a lado para qualquer par">
+          <DCArtboard id="a-meso" label="A · Editorial" width={1280} height={1200}>
+            <Frame variant="editorial" level="meso" density={tweaks.density} theme={tweaks.theme} />
+          </DCArtboard>
+          <DCArtboard id="c-meso-dark" label="C · Terminal escuro" width={1280} height={1200}>
+            <Frame variant="dark" level="meso" density={tweaks.density} theme="dark" />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="micro" title="04 · Micro — Cartografia dupla & artigos" subtitle="Mapa de contexto vs. produção, série, distribuição de fluxos, tabela de evidências">
+          <DCArtboard id="a-micro" label="A · Editorial" width={1280} height={1200}>
+            <Frame variant="editorial" level="micro" density={tweaks.density} theme={tweaks.theme} />
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      {typeof TweaksPanel !== "undefined" && (
+        <TweaksPanel>
+          <TweakSection title="Tema">
+            <TweakRadio
+              label="Aparência"
+              value={tweaks.theme}
+              onChange={(v) => setTweaks({ theme: v })}
+              options={[{ value: "light", label: "Claro" }, { value: "dark", label: "Escuro" }]}
+            />
+          </TweakSection>
+          <TweakSection title="Densidade">
+            <TweakRadio
+              label="Espaçamento"
+              value={tweaks.density}
+              onChange={(v) => setTweaks({ density: v })}
+              options={[{ value: "comfortable", label: "Conforto" }, { value: "compact", label: "Compacto" }, { value: "dense", label: "Denso" }]}
+            />
+          </TweakSection>
+        </TweaksPanel>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("canvas-root")).render(<Root />);
+</script>
+</body>
+</html>

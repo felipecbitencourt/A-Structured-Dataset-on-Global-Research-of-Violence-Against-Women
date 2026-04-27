@@ -26,18 +26,16 @@ This repository is organized into three production modules:
 |  |  \- supervised_screening_pipeline.py
 |  \- docs/
 \- analytical_interface/
-   |- README.md
-   |- build.ps1
-   |- code/
-   |- dataset/
-   |- docs/
-   \- frontend/
+   |- index.html
+   |- styles.css
+   |- data/
+   \- js/
 ```
 
 ## GitHub Pages
 
 - Landing page entrypoint: `index.html` (repository root).
-- Interactive interface entrypoint: `analytical_interface/frontend/index.html`.
+- Interactive interface entrypoint: `index.html` (root, loading assets from `analytical_interface/`).
 
 ## Quick local usage
 
@@ -50,7 +48,7 @@ python -m http.server 8000
 Then access:
 
 - `http://localhost:8000/` (project landing page)
-- `http://localhost:8000/analytical_interface/frontend/` (interactive interface)
+- `http://localhost:8000/` (interactive interface)
 
 ## Module entrypoints
 
@@ -58,4 +56,4 @@ Then access:
 - Topic modeling script: `topic_modeling/code/nmf.py`
 - ML classification docs: `ml_classification/README.md`
 - ML classification script: `ml_classification/code/supervised_screening_pipeline.py`
-- Analytical interface docs: `analytical_interface/README.md`
+- Analytical interface entrypoint: `index.html`

@@ -1,1 +1,0 @@
-{"version": "v1.1.0", "date": "2026-04-17", "source_hash": {"articles_dataset_csv_md5": "830f6f3f6207b760e8f223f48d310e8a", "topics_dataset_csv_md5": "42a85d00dab3a1380a28f14998d7b627", "megatopics_dataset_csv_md5": "600f159a838a300976a4db5cd6b4a415"}, "articles_rows": 580, "topics_rows": 32, "megatopics_rows": 7, "n_articles": 580, "n_topics": 32, "n_megatopics": 7}

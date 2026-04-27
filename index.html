@@ -1,49 +1,276 @@
 <!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Global Research on VAW</title>
-    <style>
-      body { font-family: Arial, sans-serif; margin: 24px; background: #f7f7f7; color: #222; }
-      .container { max-width: 980px; margin: 0 auto; }
-      .panel { background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 18px; margin-bottom: 14px; }
-      .cards { display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 10px; }
-      .card { border: 1px solid #e3e3e3; border-radius: 8px; padding: 12px; background: #fafafa; }
-      .btn { display: inline-block; padding: 8px 12px; border: 1px solid #1f4b99; border-radius: 8px; text-decoration: none; color: #1f4b99; font-weight: bold; background: #f5f9ff; margin-right: 8px; margin-top: 6px; }
-      code { background: #f1f1f1; border-radius: 4px; padding: 1px 4px; }
-    </style>
-  </head>
-  <body>
-    <main class="container">
-      <section class="panel">
-        <h1>A Structured Dataset on Global Research of Violence Against Women</h1>
-        <p>This repository is organized into three modules.</p>
-        <a class="btn" href="./analytical_interface/frontend/index.html">Open analytical interface</a>
-      </section>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<base href="./analytical_interface/" />
+<title>Hub de Análise — Protótipo Interativo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  /* Prototype-only chrome */
+  body { background: var(--paper); }
+  #proto-root { min-height: 100vh; }
+  /* Status bar */
+  .proto-statusbar {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    height: 28px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: 0 16px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    z-index: 50;
+    gap: 16px;
+  }
+  .proto-statusbar .status-left { display: flex; gap: 16px; align-items: center; opacity: 0.85; }
+  .proto-statusbar .status-center { display: flex; gap: 12px; align-items: center; }
+  .proto-statusbar .status-right { display: flex; gap: 16px; align-items: center; justify-content: flex-end; opacity: 0.85; }
+  .proto-statusbar .live-dot { width: 6px; height: 6px; border-radius: 50%; background: oklch(0.72 0.15 140); display: inline-block; margin-right: 6px; animation: pulse 2.4s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+  /* Account for status bar */
+  .shell { padding-bottom: 28px; }
+  .inspector { max-height: calc(100vh - 60px - 28px) !important; }
 
-      <section class="panel cards">
-        <article class="card">
-          <h3>Topic modeling</h3>
-          <p>NMF-based pipeline with text preprocessing, TF-IDF vectorization, and parameter configuration.</p>
-          <a class="btn" href="./topic_modeling/README.md">Module README</a>
-        </article>
-        <article class="card">
-          <h3>ML-assisted classification</h3>
-          <p>Supervised screening pipeline with preprocessing, vectorization, logistic regression, and self-training.</p>
-          <a class="btn" href="./ml_classification/README.md">Module README</a>
-        </article>
-        <article class="card">
-          <h3>Analytical interface</h3>
-          <p>Static HTML/JavaScript app for micro, meso, and macro dataset exploration.</p>
-          <a class="btn" href="./analytical_interface/README.md">Module README</a>
-        </article>
-      </section>
+  /* Onboarding overlay */
+  .onboard-overlay {
+    position: fixed; inset: 0;
+    background: linear-gradient(180deg, rgba(20,23,27,0.4), rgba(20,23,27,0.55));
+    z-index: 800;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(2px);
+  }
+  .onboard-card {
+    background: var(--paper);
+    width: min(720px, 92vw);
+    border: 1px solid var(--ink);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.35);
+    display: grid;
+    grid-template-columns: 220px 1fr;
+  }
+  .onboard-side {
+    background: var(--paper-2);
+    padding: 28px 24px;
+    border-right: 1px solid var(--rule);
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .onboard-side .vol { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4); }
+  .onboard-side .title { font-family: var(--serif); font-size: 28px; line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); margin-top: 18px; }
+  .onboard-side .stamp { margin-top: auto; font-family: var(--mono); font-size: 10px; color: var(--ink-4); letter-spacing: 0.06em; line-height: 1.7; }
+  .onboard-side .stamp strong { color: var(--ink-2); font-weight: 500; }
+  .onboard-body { padding: 28px 28px 22px; }
+  .onboard-body h2 { font-family: var(--serif); font-size: 18px; font-weight: 500; margin-bottom: 8px; }
+  .onboard-body p { font-family: var(--serif); font-size: 14px; line-height: 1.55; color: var(--ink-2); margin: 0 0 14px; }
+  .onboard-steps { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 22px; }
+  .onboard-step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: baseline; }
+  .onboard-step .num { font-family: var(--mono); font-size: 11px; color: var(--ink-4); letter-spacing: 0.1em; }
+  .onboard-step .lbl { font-family: var(--sans); font-size: 13px; color: var(--ink-2); }
+  .onboard-actions { display: flex; gap: 10px; align-items: center; padding-top: 16px; border-top: 1px solid var(--rule); }
 
-      <section class="panel">
-        <p>Main entrypoint for GitHub Pages: <code>/index.html</code></p>
-        <p>Interactive app entrypoint: <code>/analytical_interface/frontend/index.html</code></p>
-      </section>
-    </main>
-  </body>
+  /* Top utility bar (hint chip) */
+  .proto-toprail {
+    position: fixed; top: 14px; right: 24px; z-index: 30;
+    display: flex; gap: 8px; align-items: center;
+  }
+</style>
+</head>
+<body>
+<div id="proto-root"></div>
+
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="js/shell.jsx"></script>
+<script type="text/babel" src="js/charts.jsx"></script>
+<script type="text/babel" src="js/pages-1.jsx"></script>
+<script type="text/babel" src="js/pages-2.jsx"></script>
+<script type="text/babel" src="js/app.jsx"></script>
+<script type="text/babel" src="js/prototype-extras.jsx"></script>
+<script type="text/babel" src="js/prototype-app.jsx"></script>
+
+<script type="text/babel">
+const { useState: useS, useEffect: useE, useRef: useR } = React;
+
+const TWEAKS = /*EDITMODE-BEGIN*/{
+  "theme": "light",
+  "density": "comfortable",
+  "showOnboarding": true,
+  "showStatusBar": true
+}/*EDITMODE-END*/;
+
+function Onboarding({ onClose }) {
+  return (
+    <div className="onboard-overlay" onClick={onClose}>
+      <div className="onboard-card" onClick={(e) => e.stopPropagation()}>
+        <div className="onboard-side">
+          <span className="vol">Vol. v1.1.0 · 2026-03-30</span>
+          <div className="title">Hub de Análise Científica</div>
+          <div className="stamp">
+            <strong>CORPUS</strong><br/>
+            580 artigos<br/>
+            32 tópicos<br/>
+            7 megatópicos<br/>
+            <br/>
+            <strong>FONTE</strong><br/>
+            md5 830f6f3f…
+          </div>
+        </div>
+        <div className="onboard-body">
+          <span style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--accent-ink)" }}>Apparatus § Bem-vindo</span>
+          <h2 style={{ marginTop: 8 }}>Exploração reprodutível em três escalas.</h2>
+          <p>
+            Este protótipo demonstra o fluxo de leitura editorial sobre o corpus de violência contra a mulher. Comece pela <strong>pergunta</strong>, não pelo nível: cada salto de drill-down preserva o recorte ativo.
+          </p>
+          <div className="onboard-steps">
+            <div className="onboard-step"><span className="num">§ 01</span><span className="lbl">Use a barra lateral para navegar entre <strong>Macro · Meso · Micro</strong>.</span></div>
+            <div className="onboard-step"><span className="num">§ 02</span><span className="lbl">Clique em qualquer linha de tabela para abrir sua ficha no Apparatus à direita.</span></div>
+            <div className="onboard-step"><span className="num">§ 03</span><span className="lbl">No Meso, marque um tópico como <strong>+ B</strong> para abrir comparação A/B.</span></div>
+            <div className="onboard-step"><span className="num">§ 04</span><span className="lbl">Pressione <kbd style={{ fontFamily: "var(--mono)", fontSize: 11, padding: "2px 5px", border: "1px solid var(--rule-strong)" }}>⌘ K</kbd> para a paleta de comandos.</span></div>
+          </div>
+          <div className="onboard-actions">
+            <button className="btn-ed primary" onClick={onClose}>Começar exploração →</button>
+            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.08em" }}>esc · ignorar</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  const [tweaks, setTweaks] = useTweaks ? useTweaks(TWEAKS) : [TWEAKS, () => {}];
+  const [showOnboard, setShowOnboard] = useS(tweaks.showOnboarding !== false);
+  const [palette, setPalette] = useS(false);
+  const [toast, setToast] = useS("");
+  const [level, setLevel] = useS("home");
+  const cmdRef = useR(null);
+
+  // Apply theme + density tokens to root
+  useE(() => {
+    document.documentElement.setAttribute("data-density", tweaks.density);
+    document.documentElement.setAttribute("data-theme", tweaks.theme);
+  }, [tweaks.density, tweaks.theme]);
+
+  // Keyboard shortcuts
+  useE(() => {
+    const onKey = (e) => {
+      // Don't capture in inputs (except for cmd-K)
+      const tag = (e.target?.tagName || "").toLowerCase();
+      const inField = tag === "input" || tag === "select" || tag === "textarea";
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette(true); return; }
+      if (e.key === "Escape") { setPalette(false); setShowOnboard(false); return; }
+      if (inField) return;
+      if (e.key === "1") cmdRef.current && cmdRef.current({ type: "level", level: "home" });
+      else if (e.key === "2") cmdRef.current && cmdRef.current({ type: "level", level: "macro" });
+      else if (e.key === "3") cmdRef.current && cmdRef.current({ type: "level", level: "meso" });
+      else if (e.key === "4") cmdRef.current && cmdRef.current({ type: "level", level: "micro" });
+      else if (e.key.toLowerCase() === "r") { cmdRef.current && cmdRef.current({ type: "reset" }); setToast("Recorte resetado"); }
+      else if (e.key.toLowerCase() === "c") {
+        cmdRef.current && cmdRef.current({ type: "filter", patch: { geoMode: "context" } });
+        setToast("Modo Contexto");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  // Need megatopics + topics for command palette suggestions — load lazily once
+  const [palData, setPalData] = useS({ megatopics: [], topics: [] });
+  useE(() => {
+    Promise.all([
+      fetch("data/topics.json").then(r => r.json()),
+      fetch("data/megatopics.json").then(r => r.json()),
+    ]).then(([topics, megatopics]) => setPalData({ topics, megatopics })).catch(() => {});
+  }, []);
+
+  const handleAction = (cmd) => {
+    if (cmd.type === "toast") { setToast(cmd.msg); return; }
+    cmdRef.current && cmdRef.current(cmd);
+    if (cmd.type === "filter") setToast("Filtro aplicado");
+    if (cmd.type === "level") setToast("Nível: " + cmd.level);
+    if (cmd.type === "reset") setToast("Estado limpo");
+    if (cmd.type === "drill-mega") setToast("Megatópico selecionado");
+    if (cmd.type === "drill-topic") setToast("Tópico aberto");
+  };
+
+  return (
+    <>
+      <PrototypeHub commandRef={cmdRef} onLevelChange={setLevel} />
+
+      <div className="proto-toprail">
+        <KeyHint label="comandos" onClick={() => setPalette(true)} />
+      </div>
+
+      {tweaks.showStatusBar && (
+        <div className="proto-statusbar">
+          <div className="status-left">
+            <span><span className="live-dot"></span>Sessão ativa</span>
+            <span>nível · {level}</span>
+            <span>artigos · 580</span>
+          </div>
+          <div className="status-center">
+            <span style={{ opacity: 0.6 }}>v1.1.0</span>
+            <span style={{ opacity: 0.6 }}>·</span>
+            <span style={{ opacity: 0.6 }}>release 2026-03-30</span>
+            <span style={{ opacity: 0.6 }}>·</span>
+            <span style={{ opacity: 0.6 }}>md5 830f6f3f</span>
+          </div>
+          <div className="status-right">
+            <span>⌘K · paleta</span>
+            <span>R · reset</span>
+            <span>1–4 · níveis</span>
+          </div>
+        </div>
+      )}
+
+      {showOnboard && <Onboarding onClose={() => setShowOnboard(false)} />}
+
+      <CommandPalette open={palette} onClose={() => setPalette(false)}
+                      onAction={handleAction}
+                      megatopics={palData.megatopics} topics={palData.topics} />
+
+      <Toast msg={toast} onDone={() => setToast("")} />
+
+      {typeof TweaksPanel !== "undefined" && (
+        <TweaksPanel>
+          <TweakSection title="Tema">
+            <TweakRadio
+              label="Aparência"
+              value={tweaks.theme}
+              onChange={(v) => setTweaks({ theme: v })}
+              options={[{ value: "light", label: "Claro" }, { value: "dark", label: "Escuro" }]}
+            />
+          </TweakSection>
+          <TweakSection title="Densidade">
+            <TweakRadio
+              label="Espaçamento"
+              value={tweaks.density}
+              onChange={(v) => setTweaks({ density: v })}
+              options={[{ value: "comfortable", label: "Conforto" }, { value: "compact", label: "Compacto" }, { value: "dense", label: "Denso" }]}
+            />
+          </TweakSection>
+          <TweakSection title="Chrome do protótipo">
+            <TweakToggle label="Status bar" value={tweaks.showStatusBar} onChange={(v) => setTweaks({ showStatusBar: v })} />
+            <TweakButton label="Reabrir tour de boas-vindas" onClick={() => setShowOnboard(true)} />
+          </TweakSection>
+        </TweaksPanel>
+      )}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("proto-root")).render(<App />);
+</script>
+</body>
 </html>
