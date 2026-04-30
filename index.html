@@ -110,7 +110,7 @@ const TWEAKS = /*EDITMODE-BEGIN*/{
   "showStatusBar": true
 }/*EDITMODE-END*/;
 
-const SETTINGS_STORAGE_KEY = "hubSettingsV1";
+const SETTINGS_STORAGE_KEY = "hubSettingsV2";
 const SETTINGS_LOG_STORAGE_KEY = "hubSettingsLogV1";
 function readPersistedSettings() {
   try {
@@ -270,7 +270,7 @@ function App() {
     document.documentElement.setAttribute("data-theme", tweaks.theme);
     document.documentElement.setAttribute("data-font-family", tweaks.dyslexicFontEnabled ? "dyslexic" : "default");
     document.documentElement.style.setProperty("--font-scale", String(tweaks.fontScale || 1));
-    document.documentElement.setAttribute("lang", tweaks.language || "pt");
+    document.documentElement.setAttribute("lang", tweaks.language || "en");
   }, [tweaks.density, tweaks.theme, tweaks.dyslexicFontEnabled, tweaks.fontScale, tweaks.language]);
 
   useE(() => {
@@ -295,7 +295,7 @@ function App() {
   }, []);
 
   useE(() => {
-    const apply = () => applyGoogleTranslateLanguage(tweaks.language || "pt");
+    const apply = () => applyGoogleTranslateLanguage(tweaks.language || "en");
     apply();
     const timer = window.setTimeout(apply, 800);
     return () => window.clearTimeout(timer);
