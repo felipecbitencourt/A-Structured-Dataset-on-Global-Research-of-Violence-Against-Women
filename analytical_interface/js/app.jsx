@@ -160,6 +160,7 @@ function normalizeArticles(rawArticles) {
 
     return {
       id: a.article_id || idx + 1,
+      doi: String(a.doi || "").trim(),
       year: Number(a.year) || 0,
       study_country: studyCountry,
       study_country_name: studyCountry,
@@ -293,7 +294,7 @@ function Inspector({ level, selectedTopic, selectedMega, articles, onClose, onDr
 }
 
 // ---------- App ----------
-function HubApp({ variant = "editorial" }) {
+function HubApp({ variant = "editorial", settings, onSettingsChange }) {
   const meta = useRes("data/meta.json");
   const topicsRaw = useDatasetRes("topics");
   const megatopicsRaw = useDatasetRes("megatopics");
@@ -344,7 +345,7 @@ function HubApp({ variant = "editorial" }) {
 
   return (
     <div className="shell" data-variant={variant}>
-      <Masthead meta={meta} />
+      <Masthead meta={meta} settings={settings} onSettingsChange={onSettingsChange} />
       <aside className="sidebar">
         <div className="sidebar-section">
           <div className="sidebar-label">Níveis<span className="count">{counts.articles + " · " + counts.topics + " · " + counts.megatopics}</span></div>

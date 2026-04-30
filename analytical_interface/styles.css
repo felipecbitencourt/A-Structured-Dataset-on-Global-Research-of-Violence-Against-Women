@@ -19,9 +19,12 @@
   --positive: oklch(0.55 0.09 155);
 
   /* Typography */
-  --serif: "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
-  --sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif-base: "Source Serif 4", "Source Serif Pro", Georgia, "Times New Roman", serif;
+  --sans-base: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --serif: var(--serif-base);
+  --sans: var(--sans-base);
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-scale: 1;
 
   /* Density tokens (default: comfortable) */
   --sp-1: 4px;
@@ -32,13 +35,20 @@
   --sp-6: 38px;
   --sp-7: 56px;
   --row-h: 28px;
-  --fs-body: 14px;
-  --fs-small: 12px;
-  --fs-micro: 11px;
-  --fs-h1: 42px;
-  --fs-h2: 22px;
-  --fs-h3: 15px;
-  --fs-kpi: 32px;
+  --fs-body-raw: 14px;
+  --fs-small-raw: 12px;
+  --fs-micro-raw: 11px;
+  --fs-h1-raw: 42px;
+  --fs-h2-raw: 22px;
+  --fs-h3-raw: 15px;
+  --fs-kpi-raw: 32px;
+  --fs-body: calc(var(--fs-body-raw) * var(--font-scale));
+  --fs-small: calc(var(--fs-small-raw) * var(--font-scale));
+  --fs-micro: calc(var(--fs-micro-raw) * var(--font-scale));
+  --fs-h1: calc(var(--fs-h1-raw) * var(--font-scale));
+  --fs-h2: calc(var(--fs-h2-raw) * var(--font-scale));
+  --fs-h3: calc(var(--fs-h3-raw) * var(--font-scale));
+  --fs-kpi: calc(var(--fs-kpi-raw) * var(--font-scale));
   --panel-pad: 20px;
 }
 
@@ -47,8 +57,8 @@
   --sp-6: 24px;
   --sp-7: 36px;
   --row-h: 24px;
-  --fs-body: 13px;
-  --fs-kpi: 28px;
+  --fs-body-raw: 13px;
+  --fs-kpi-raw: 28px;
   --panel-pad: 14px;
 }
 
@@ -59,14 +69,19 @@
   --sp-6: 18px;
   --sp-7: 28px;
   --row-h: 22px;
-  --fs-body: 12px;
-  --fs-small: 11px;
-  --fs-micro: 10px;
-  --fs-h1: 34px;
-  --fs-h2: 18px;
-  --fs-h3: 13px;
-  --fs-kpi: 24px;
+  --fs-body-raw: 12px;
+  --fs-small-raw: 11px;
+  --fs-micro-raw: 10px;
+  --fs-h1-raw: 34px;
+  --fs-h2-raw: 18px;
+  --fs-h3-raw: 13px;
+  --fs-kpi-raw: 24px;
   --panel-pad: 10px;
+}
+
+:root[data-font-family="dyslexic"] {
+  --sans: "OpenDyslexic", Arial, sans-serif;
+  --serif: "OpenDyslexic", Arial, sans-serif;
 }
 
 :root[data-theme="dark"] {
@@ -147,7 +162,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
 
 .masthead-title {
   font-family: var(--serif);
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
   font-weight: 500;
   letter-spacing: -0.01em;
   display: flex;
@@ -186,6 +201,64 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
   color: var(--ink-4);
   text-transform: uppercase;
   letter-spacing: 0.18em;
+}
+.masthead-settings-wrap {
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+}
+.masthead-settings-trigger {
+  min-width: 132px;
+}
+.settings-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 280px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 60;
+}
+.settings-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.settings-item label,
+.settings-item span {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+}
+.settings-item input[type="range"] {
+  width: 100%;
+}
+.settings-value {
+  font-family: var(--mono);
+  color: var(--ink-3);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.settings-toggle-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+.settings-item select {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--rule-strong);
+  padding: 6px 8px;
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--fs-small);
 }
 
 /* Sidebar */
@@ -244,7 +317,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
 .level-item.active .level-marker { color: var(--accent); }
 .level-item .level-name {
   font-family: var(--serif);
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
 }
 .level-item .level-count {
   font-family: var(--mono);
@@ -341,7 +414,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
   font-family: var(--serif);
   font-style: italic;
   color: var(--ink-3);
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale));
   max-width: 640px;
   margin-top: 14px;
   line-height: 1.65;
@@ -486,7 +559,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
 }
 .module-title {
   font-family: var(--serif);
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
   font-weight: 500;
 }
 .module-sub {
@@ -499,7 +572,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
 .module-note {
   font-family: var(--serif);
   font-style: italic;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--ink-3);
   margin-bottom: 14px;
   line-height: 1.7;
@@ -529,7 +602,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
 }
 
 .path-note {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale));
   color: var(--ink-2);
   line-height: 1.65;
   max-width: 64ch;
@@ -594,7 +667,7 @@ hr { border: 0; border-top: 1px solid var(--rule); margin: var(--sp-5) 0; }
   padding: 2px 6px;
   border-radius: 2px;
 }
-.inspector h2 { font-size: 20px; margin-bottom: 4px; }
+.inspector h2 { font-size: calc(20px * var(--font-scale)); margin-bottom: 4px; }
 .inspector .meta-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 14px; font-family: var(--mono); font-size: 11px; color: var(--ink-3); }
 .inspector .meta-row .k { color: var(--ink-4); letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; margin-bottom: 2px; }
 .inspector .kw-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -652,7 +725,7 @@ table.ed tr { cursor: pointer; }
 table.ed tr:hover td { background: var(--paper-2); color: var(--ink); }
 table.ed tr.selected td { background: var(--accent-soft); color: var(--ink); }
 table.ed td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink); }
-table.ed td.title { font-family: var(--serif); font-size: 13px; color: var(--ink); line-height: 1.5; }
+table.ed td.title { font-family: var(--serif); font-size: calc(13px * var(--font-scale)); color: var(--ink); line-height: 1.5; }
 
 /* Buttons */
 .btn-ed {
@@ -689,8 +762,8 @@ table.ed td.title { font-family: var(--serif); font-size: 13px; color: var(--ink
   letter-spacing: 0.2em;
   margin-bottom: 10px;
 }
-.cap h3 { color: var(--ink); font-family: var(--serif); text-transform: none; letter-spacing: -0.01em; font-size: 22px; margin-bottom: 10px; font-weight: 500; }
-.cap p { font-size: 13px; color: var(--ink-3); margin: 0; line-height: 1.65; }
+.cap h3 { color: var(--ink); font-family: var(--serif); text-transform: none; letter-spacing: -0.01em; font-size: calc(22px * var(--font-scale)); margin-bottom: 10px; font-weight: 500; }
+.cap p { font-size: calc(13px * var(--font-scale)); color: var(--ink-3); margin: 0; line-height: 1.65; }
 
 /* Signature chart blocks */
 .chart-wrap { width: 100%; min-height: 180px; }
@@ -729,7 +802,7 @@ table.ed td.title { font-family: var(--serif); font-size: 13px; color: var(--ink
 }
 .section-head h2 {
   font-family: var(--serif);
-  font-size: 28px;
+  font-size: calc(28px * var(--font-scale));
   font-weight: 500;
 }
 .section-head .section-num {
@@ -762,7 +835,7 @@ table.ed td.title { font-family: var(--serif); font-size: 13px; color: var(--ink
   letter-spacing: 0.18em; text-transform: uppercase;
   color: var(--ink-4);
 }
-.ab-name { font-family: var(--serif); font-size: 16px; line-height: 1.2; }
+.ab-name { font-family: var(--serif); font-size: calc(16px * var(--font-scale)); line-height: 1.2; }
 .ab-diff {
   font-family: var(--mono);
   font-size: 11px;
@@ -804,7 +877,7 @@ table.ed td.title { font-family: var(--serif); font-size: 13px; color: var(--ink
   border-top: 1px solid var(--rule);
   font-family: var(--serif);
   font-style: italic;
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale));
   color: var(--ink-4);
   line-height: 1.5;
 }

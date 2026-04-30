@@ -4,7 +4,7 @@
 // without prop-drilling through every page.
 const { useState: usePA, useEffect: useEffectPA, useMemo: useMemoPA, useRef: useRefPA } = React;
 
-function PrototypeHub({ commandRef, onLevelChange }) {
+function PrototypeHub({ commandRef, onLevelChange, settings, onSettingsChange }) {
   const meta = useRes("data/meta.json");
   const topicsRaw = useDatasetRes("topics");
   const megatopicsRaw = useDatasetRes("megatopics");
@@ -73,7 +73,7 @@ function PrototypeHub({ commandRef, onLevelChange }) {
 
   return (
     <div className="shell" data-variant="editorial">
-      <Masthead meta={meta} />
+      <Masthead meta={meta} settings={settings} onSettingsChange={onSettingsChange} />
       <aside className="sidebar">
         <div className="sidebar-section">
           <div className="sidebar-label">Níveis<span className="count">{counts.articles + " · " + counts.topics + " · " + counts.megatopics}</span></div>

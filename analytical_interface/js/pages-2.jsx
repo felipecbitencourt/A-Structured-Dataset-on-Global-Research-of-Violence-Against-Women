@@ -236,6 +236,14 @@ function MicroPage({ filtered, topics, megatopics, dark }) {
     return 0;
   });
 
+  const openDoi = (doiRaw) => {
+    const doi = String(doiRaw || "").trim();
+    if (!doi) return;
+    const normalized = doi.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "").trim();
+    if (!normalized) return;
+    window.open(`https://doi.org/${encodeURIComponent(normalized)}`, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div>
       <div className="page-header">
@@ -312,7 +320,12 @@ function MicroPage({ filtered, topics, megatopics, dark }) {
         </thead>
         <tbody>
           {sorted.slice(0, 80).map((a) => (
-            <tr key={a.id}>
+            <tr
+              key={a.id}
+              onClick={() => openDoi(a.doi)}
+              style={{ cursor: a.doi ? "pointer" : "default" }}
+              title={a.doi ? `Abrir DOI: ${a.doi}` : "DOI indisponível"}
+            >
               <td className="num">{a.year}</td>
               <td className="title">{a.title}</td>
               <td style={{ fontStyle: "italic", color: "var(--ink-3)", fontSize: 12 }}>{a.journal}</td>

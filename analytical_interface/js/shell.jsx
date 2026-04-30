@@ -76,29 +76,17 @@ function useDatasetRes(baseName) {
   const [data, setData] = useState(null);
   useEffect(() => {
     let cancelled = false;
-    const jsonPath = `data/${baseName}.json`;
     const csvPath = `data/${baseName}_dataset.csv`;
-
-    fetch(jsonPath)
+    fetch(csvPath)
       .then((r) => {
-        if (!r.ok) throw new Error("json not found");
-        return r.json();
+        if (!r.ok) throw new Error("csv not found");
+        return r.text();
       })
-      .then((payload) => {
-        if (!cancelled) setData(payload);
+      .then((text) => {
+        if (!cancelled) setData(parseCsv(text));
       })
       .catch(() => {
-        fetch(csvPath)
-          .then((r) => {
-            if (!r.ok) throw new Error("csv not found");
-            return r.text();
-          })
-          .then((text) => {
-            if (!cancelled) setData(parseCsv(text));
-          })
-          .catch(() => {
-            if (!cancelled) setData(null);
-          });
+        if (!cancelled) setData(null);
       });
 
     return () => { cancelled = true; };
@@ -107,7 +95,38 @@ function useDatasetRes(baseName) {
 }
 
 // ---------------- Masthead ----------------
-function Masthead({ meta }) {
+function Masthead({ meta, settings, onSettingsChange }) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef(null);
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onPointerDown = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target) && buttonRef.current && !buttonRef.current.contains(event.target)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const safeSettings = settings || {
+    fontScale: 1,
+    dyslexicFontEnabled: false,
+    theme: "light",
+    vlibrasEnabled: false,
+    language: "pt",
+  };
+  const setSetting = (patch) => onSettingsChange && onSettingsChange(patch);
+
   return (
     <header className="masthead">
       <div>
@@ -118,7 +137,82 @@ function Masthead({ meta }) {
       <div className="masthead-center">
         Vol. {meta?.version || "—"} · Corpus {fmtInt(meta?.n_articles || 580)} · {meta?.date || "—"}
       </div>
-      <div aria-hidden="true"></div>
+      <div className="masthead-settings-wrap">
+        <button
+          ref={buttonRef}
+          type="button"
+          className="btn-ed masthead-settings-trigger"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-controls="settings-menu"
+          onClick={() => setOpen((v) => !v)}
+        >
+          Configurações
+        </button>
+        {open && (
+          <div ref={menuRef} id="settings-menu" className="settings-menu" role="menu" aria-label="Menu de configurações">
+            <div className="settings-item">
+              <label htmlFor="font-scale-slider">Tamanho da fonte</label>
+              <input
+                id="font-scale-slider"
+                type="range"
+                min="0.85"
+                max="1.3"
+                step="0.05"
+                value={safeSettings.fontScale}
+                onChange={(event) => setSetting({ fontScale: Number(event.target.value) })}
+              />
+              <span className="settings-value">{Math.round((safeSettings.fontScale || 1) * 100)}%</span>
+            </div>
+
+            <div className="settings-item settings-toggle-row">
+              <span>Fonte OpenDyslexic</span>
+              <button
+                type="button"
+                className={"btn-ed ghost " + (safeSettings.dyslexicFontEnabled ? "active" : "")}
+                onClick={() => setSetting({ dyslexicFontEnabled: !safeSettings.dyslexicFontEnabled })}
+              >
+                {safeSettings.dyslexicFontEnabled ? "Ativado" : "Desativado"}
+              </button>
+            </div>
+
+            <div className="settings-item settings-toggle-row">
+              <span>Modo escuro</span>
+              <button
+                type="button"
+                className={"btn-ed ghost " + (safeSettings.theme === "dark" ? "active" : "")}
+                onClick={() => setSetting({ theme: safeSettings.theme === "dark" ? "light" : "dark" })}
+              >
+                {safeSettings.theme === "dark" ? "Ativado" : "Desativado"}
+              </button>
+            </div>
+
+            <div className="settings-item settings-toggle-row">
+              <span>VLibras</span>
+              <button
+                type="button"
+                className={"btn-ed ghost " + (safeSettings.vlibrasEnabled ? "active" : "")}
+                onClick={() => setSetting({ vlibrasEnabled: !safeSettings.vlibrasEnabled })}
+              >
+                {safeSettings.vlibrasEnabled ? "Ativado" : "Desativado"}
+              </button>
+            </div>
+
+            <div className="settings-item">
+              <label htmlFor="language-select">Idioma</label>
+              <select
+                id="language-select"
+                value={safeSettings.language}
+                onChange={(event) => setSetting({ language: event.target.value })}
+              >
+                <option value="pt">Português</option>
+                <option value="en">English</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

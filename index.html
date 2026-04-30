@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic.min.css" />
 <link rel="stylesheet" href="styles.css" />
 <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
@@ -80,15 +81,11 @@
   .onboard-step .lbl { font-family: var(--sans); font-size: 13px; color: var(--ink-2); }
   .onboard-actions { display: flex; gap: 10px; align-items: center; padding-top: 16px; border-top: 1px solid var(--rule); }
 
-  /* Top utility bar (hint chip) */
-  .proto-toprail {
-    position: fixed; top: 14px; right: 24px; z-index: 30;
-    display: flex; gap: 8px; align-items: center;
-  }
 </style>
 </head>
 <body>
 <div id="proto-root"></div>
+<div id="google_translate_element" style="position:absolute;left:-9999px;top:0;height:0;overflow:hidden;"></div>
 
 <script type="text/babel" src="tweaks-panel.jsx"></script>
 <script type="text/babel" src="js/shell.jsx"></script>
@@ -100,14 +97,116 @@
 <script type="text/babel" src="js/prototype-app.jsx"></script>
 
 <script type="text/babel">
-const { useState: useS, useEffect: useE, useRef: useR } = React;
+const { useState: useS, useEffect: useE, useRef: useR, useMemo: useM } = React;
 
 const TWEAKS = /*EDITMODE-BEGIN*/{
   "theme": "light",
   "density": "comfortable",
+  "fontScale": 1,
+  "dyslexicFontEnabled": true,
+  "vlibrasEnabled": false,
+  "language": "pt",
   "showOnboarding": true,
   "showStatusBar": true
 }/*EDITMODE-END*/;
+
+const SETTINGS_STORAGE_KEY = "hubSettingsV1";
+const SETTINGS_LOG_STORAGE_KEY = "hubSettingsLogV1";
+function readPersistedSettings() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return typeof parsed === "object" && parsed ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function appendSettingsLog(snapshot) {
+  try {
+    const existing = JSON.parse(localStorage.getItem(SETTINGS_LOG_STORAGE_KEY) || "[]");
+    const list = Array.isArray(existing) ? existing : [];
+    list.push({
+      at: new Date().toISOString(),
+      settings: snapshot,
+    });
+    const compact = list.slice(-200);
+    localStorage.setItem(SETTINGS_LOG_STORAGE_KEY, JSON.stringify(compact));
+  } catch (_) {
+    // noop
+  }
+}
+
+function applyGoogleTranslateLanguage(lang) {
+  const target = lang || "pt";
+  const combo = document.querySelector(".goog-te-combo");
+  if (combo) {
+    combo.value = target;
+    combo.dispatchEvent(new Event("change"));
+    return;
+  }
+  const value = target === "pt" ? "/pt/pt" : `/pt/${target}`;
+  document.cookie = `googtrans=${value}; path=/`;
+}
+
+function ensureGoogleTranslateLoaded() {
+  if (window.__googleTranslateReady) return;
+  window.googleTranslateElementInit = function googleTranslateElementInit() {
+    if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) return;
+    new window.google.translate.TranslateElement(
+      { pageLanguage: "pt", includedLanguages: "pt,en,es", autoDisplay: false },
+      "google_translate_element"
+    );
+    window.__googleTranslateReady = true;
+  };
+  if (!document.getElementById("google-translate-script")) {
+    const script = document.createElement("script");
+    script.id = "google-translate-script";
+    script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+    script.async = true;
+    document.body.appendChild(script);
+  }
+}
+
+function ensureVlibrasLoaded() {
+  if (window.__vlibrasReadyPromise) return window.__vlibrasReadyPromise;
+
+  window.__vlibrasReadyPromise = new Promise((resolve, reject) => {
+    const done = () => {
+      if (window.VLibras && window.VLibras.Widget) {
+        resolve(window.VLibras);
+        return true;
+      }
+      return false;
+    };
+
+    if (done()) return;
+
+    let attempts = 0;
+    const maxAttempts = 50;
+    const poll = window.setInterval(() => {
+      attempts += 1;
+      if (done()) {
+        window.clearInterval(poll);
+      } else if (attempts >= maxAttempts) {
+        window.clearInterval(poll);
+        reject(new Error("VLibras unavailable"));
+      }
+    }, 200);
+
+    if (!document.getElementById("vlibras-script")) {
+      const script = document.createElement("script");
+      script.id = "vlibras-script";
+      script.src = "https://vlibras.gov.br/app/vlibras-plugin.js";
+      script.async = true;
+      script.onerror = () => reject(new Error("VLibras script load failed"));
+      document.body.appendChild(script);
+    }
+  });
+
+  return window.__vlibrasReadyPromise;
+}
 
 function Onboarding({ onClose }) {
   return (
@@ -149,18 +248,84 @@ function Onboarding({ onClose }) {
 }
 
 function App() {
-  const [tweaks, setTweaks] = useTweaks ? useTweaks(TWEAKS) : [TWEAKS, () => {}];
+  const persisted = useM(() => readPersistedSettings(), []);
+  const mergedTweaks = useM(() => ({ ...TWEAKS, ...persisted }), [persisted]);
+  const [tweaks, setTweaks] = useTweaks ? useTweaks(mergedTweaks) : [mergedTweaks, () => {}];
+  const updateTweaks = (patch) => {
+    if (!patch || typeof patch !== "object") return;
+    Object.entries(patch).forEach(([key, value]) => {
+      setTweaks(key, value);
+    });
+  };
   const [showOnboard, setShowOnboard] = useS(tweaks.showOnboarding !== false);
   const [palette, setPalette] = useS(false);
   const [toast, setToast] = useS("");
   const [level, setLevel] = useS("home");
   const cmdRef = useR(null);
+  const lastSettingsLogRef = useR("");
 
   // Apply theme + density tokens to root
   useE(() => {
     document.documentElement.setAttribute("data-density", tweaks.density);
     document.documentElement.setAttribute("data-theme", tweaks.theme);
-  }, [tweaks.density, tweaks.theme]);
+    document.documentElement.setAttribute("data-font-family", tweaks.dyslexicFontEnabled ? "dyslexic" : "default");
+    document.documentElement.style.setProperty("--font-scale", String(tweaks.fontScale || 1));
+    document.documentElement.setAttribute("lang", tweaks.language || "pt");
+  }, [tweaks.density, tweaks.theme, tweaks.dyslexicFontEnabled, tweaks.fontScale, tweaks.language]);
+
+  useE(() => {
+    const snapshot = {
+      density: tweaks.density,
+      theme: tweaks.theme,
+      fontScale: tweaks.fontScale,
+      dyslexicFontEnabled: tweaks.dyslexicFontEnabled,
+      vlibrasEnabled: tweaks.vlibrasEnabled,
+      language: tweaks.language,
+    };
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(snapshot));
+    const serialized = JSON.stringify(snapshot);
+    if (lastSettingsLogRef.current !== serialized) {
+      appendSettingsLog(snapshot);
+      lastSettingsLogRef.current = serialized;
+    }
+  }, [tweaks]);
+
+  useE(() => {
+    ensureGoogleTranslateLoaded();
+  }, []);
+
+  useE(() => {
+    const apply = () => applyGoogleTranslateLanguage(tweaks.language || "pt");
+    apply();
+    const timer = window.setTimeout(apply, 800);
+    return () => window.clearTimeout(timer);
+  }, [tweaks.language]);
+
+  useE(() => {
+    if (tweaks.vlibrasEnabled) {
+      let root = document.getElementById("vlibras-root");
+      if (!root) {
+        root = document.createElement("div");
+        root.id = "vlibras-root";
+        root.innerHTML = '<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>';
+        document.body.appendChild(root);
+      }
+      root.style.display = "";
+      ensureVlibrasLoaded()
+        .then(() => {
+          if (!window.__vlibrasWidget) {
+            window.__vlibrasWidget = new window.VLibras.Widget("https://vlibras.gov.br/app");
+          }
+        })
+        .catch(() => {
+          setToast("Falha ao carregar VLibras");
+        });
+      return undefined;
+    }
+
+    const root = document.getElementById("vlibras-root");
+    if (root) root.style.display = "none";
+  }, [tweaks.vlibrasEnabled]);
 
   // Keyboard shortcuts
   useE(() => {
@@ -188,9 +353,16 @@ function App() {
   // Need megatopics + topics for command palette suggestions — load lazily once
   const [palData, setPalData] = useS({ megatopics: [], topics: [] });
   useE(() => {
+    const loadCsv = (name) => fetch(`data/${name}_dataset.csv`)
+      .then((r) => {
+        if (!r.ok) throw new Error("csv not found");
+        return r.text();
+      })
+      .then((text) => (typeof parseCsv === "function" ? parseCsv(text) : []));
+
     Promise.all([
-      fetch("data/topics.json").then(r => r.json()),
-      fetch("data/megatopics.json").then(r => r.json()),
+      loadCsv("topics"),
+      loadCsv("megatopics"),
     ]).then(([topics, megatopics]) => setPalData({ topics, megatopics })).catch(() => {});
   }, []);
 
@@ -206,11 +378,12 @@ function App() {
 
   return (
     <>
-      <PrototypeHub commandRef={cmdRef} onLevelChange={setLevel} />
-
-      <div className="proto-toprail">
-        <KeyHint label="comandos" onClick={() => setPalette(true)} />
-      </div>
+      <PrototypeHub
+        commandRef={cmdRef}
+        onLevelChange={setLevel}
+        settings={tweaks}
+        onSettingsChange={updateTweaks}
+      />
 
       {tweaks.showStatusBar && (
         <div className="proto-statusbar">
@@ -248,7 +421,7 @@ function App() {
             <TweakRadio
               label="Aparência"
               value={tweaks.theme}
-              onChange={(v) => setTweaks({ theme: v })}
+              onChange={(v) => updateTweaks({ theme: v })}
               options={[{ value: "light", label: "Claro" }, { value: "dark", label: "Escuro" }]}
             />
           </TweakSection>
@@ -256,12 +429,12 @@ function App() {
             <TweakRadio
               label="Espaçamento"
               value={tweaks.density}
-              onChange={(v) => setTweaks({ density: v })}
+              onChange={(v) => updateTweaks({ density: v })}
               options={[{ value: "comfortable", label: "Conforto" }, { value: "compact", label: "Compacto" }, { value: "dense", label: "Denso" }]}
             />
           </TweakSection>
           <TweakSection title="Chrome do protótipo">
-            <TweakToggle label="Status bar" value={tweaks.showStatusBar} onChange={(v) => setTweaks({ showStatusBar: v })} />
+            <TweakToggle label="Status bar" value={tweaks.showStatusBar} onChange={(v) => updateTweaks({ showStatusBar: v })} />
             <TweakButton label="Reabrir tour de boas-vindas" onClick={() => setShowOnboard(true)} />
           </TweakSection>
         </TweaksPanel>
