@@ -172,6 +172,9 @@ function MiniTopicStar({ topics }) {
 function MacroPage({ megatopics, filtered, onSelectMega, selectedMega }) {
   const byMega = {};
   filtered.forEach((a) => { byMega[a.megatopic_id] = (byMega[a.megatopic_id] || 0) + 1; });
+  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
+  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
+  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
   const rows = megatopics.map((m) => ({
     ...m,
     filtered_count: byMega[m.megatopic_id] || 0,
@@ -196,6 +199,13 @@ function MacroPage({ megatopics, filtered, onSelectMega, selectedMega }) {
           artigos filtrados ↓
         </div>
       </div>
+      <KpiStrip
+        articles={filtered}
+        totalArticles={filtered.length}
+        totalCountries={totalCountries}
+        totalJournals={totalJournals}
+        totalCross={totalCross}
+      />
 
       <div className="section-head">
         <div className="section-num">§ 01</div>

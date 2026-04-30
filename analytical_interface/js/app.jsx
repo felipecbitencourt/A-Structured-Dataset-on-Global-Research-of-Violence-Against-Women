@@ -169,12 +169,71 @@ function normalizeArticles(rawArticles) {
       topic_id: Number(a.topic_id) || 0,
       megatopic_id: Number(a.megatopic_id) || 0,
       title: a.title || "Untitled",
+      keywords: String(a.keywords || "").trim(),
+      authors: String(a.authors || "").trim(),
       journal: sanitizeJournal(a.journal),
       flow,
       latitude: Number(a.latitude) || 0,
       longitude: Number(a.longitude) || 0,
     };
   }).filter((a) => a.year > 0 && a.topic_id > 0 && a.megatopic_id > 0);
+}
+
+function SidebarSection({ title, count, isOpen, onToggle, children }) {
+  return (
+    <section className={"sidebar-section " + (isOpen ? "is-open" : "is-collapsed")}>
+      <button
+        type="button"
+        className="sidebar-toggle"
+        aria-expanded={isOpen}
+        onClick={onToggle}
+      >
+        <span className="sidebar-label">
+          <span>{title}</span>
+          {count ? <span className="count">{count}</span> : null}
+        </span>
+        <span className="sidebar-caret" aria-hidden="true">{isOpen ? "▾" : "▸"}</span>
+      </button>
+      {isOpen ? <div className="sidebar-body">{children}</div> : null}
+    </section>
+  );
+}
+
+function downloadFilteredCsv(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const columns = ["id", "year", "title", "journal", "study_country", "researcher_country", "flow", "topic_id", "megatopic_id", "doi"];
+  const esc = (value) => `"${String(value ?? "").replace(/"/g, "\"\"")}"`;
+  const csv = [columns.join(",")]
+    .concat(list.map((row) => columns.map((col) => esc(row[col])).join(",")))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const stamp = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `filtered_articles_${stamp}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function SidebarApparatus({ onPresetRange, onFocusProduction, onCompareTopics, onExportCsv }) {
+  return (
+    <div className="sidebar-apparatus">
+      <h3 className="sidebar-apparatus-title">Como ler este hub</h3>
+      <p className="sidebar-apparatus-text">
+        Comece pela <strong>pergunta de pesquisa</strong>, não pelo nível. As três escalas — micro, meso, macro — compartilham filtros via URL. Selecione um megatópico para descer ao meso; um tópico para descer ao micro; em qualquer ponto, edite o recorte temporal pela escala superior.
+      </p>
+      <div className="sidebar-subhead"><span>Atalhos editoriais</span></div>
+      <div className="sidebar-shortcuts">
+        <button type="button" className="sidebar-action-btn" onClick={onPresetRange}>Recorte 2021–2025 <span>›</span></button>
+        <button type="button" className="sidebar-action-btn" onClick={onFocusProduction}>Foco em produção (mapa) <span>›</span></button>
+        <button type="button" className="sidebar-action-btn" onClick={onCompareTopics}>Comparar 2 tópicos (A/B) <span>›</span></button>
+        <button type="button" className="sidebar-action-btn" onClick={onExportCsv}>Exportar CSV filtrado <span>›</span></button>
+      </div>
+    </div>
+  );
 }
 
 // ---------- Inspector right panel ----------
@@ -312,6 +371,7 @@ function HubApp({ variant = "editorial", settings, onSettingsChange }) {
   const [selectedMega, setSelectedMega] = useStateApp(null);
   const [selectedTopic, setSelectedTopic] = useStateApp(null);
   const [compareTopic, setCompareTopic] = useStateApp(null);
+  const [sidebarOpen, setSidebarOpen] = useStateApp({ levels: true, apparatus: true, filters: true });
 
   useEffectApp(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -334,45 +394,55 @@ function HubApp({ variant = "editorial", settings, onSettingsChange }) {
   }
 
   const counts = { articles: fmtInt(meta.n_articles), topics: meta.n_topics, megatopics: meta.n_megatopics };
-  const yearCounts = {};
-  data.articles.forEach((a) => { yearCounts[a.year] = (yearCounts[a.year] || 0) + 1; });
-  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
-  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
-  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
   const countryOptions = Array.from(new Set(data.articles.map((a) => a.study_country))).sort();
+  const handlePresetRange = () => setFilters((f) => ({ ...f, yearMin: 2021, yearMax: 2025 }));
+  const handleFocusProduction = () => { setFilters((f) => ({ ...f, geoMode: "production" })); setLevel("micro"); };
+  const handleCompareTopics = () => { setLevel("meso"); setSelectedTopic(null); setCompareTopic(null); };
+  const handleExportCsv = () => downloadFilteredCsv(filtered);
 
   const isDark = variant === "dark";
 
   return (
-    <div className="shell" data-variant={variant}>
+    <div className="shell shell--no-inspector" data-variant={variant}>
       <Masthead meta={meta} settings={settings} onSettingsChange={onSettingsChange} />
       <aside className="sidebar">
-        <div className="sidebar-section">
-          <div className="sidebar-label">Níveis<span className="count">{counts.articles + " · " + counts.topics + " · " + counts.megatopics}</span></div>
+        <SidebarSection
+          title="Níveis"
+          count={counts.articles + " · " + counts.topics + " · " + counts.megatopics}
+          isOpen={sidebarOpen.levels}
+          onToggle={() => setSidebarOpen((s) => ({ ...s, levels: !s.levels }))}
+        >
           <LevelNav level={level} setLevel={setLevel} counts={counts}
                     selectedTopic={selectedTopic} selectedMega={selectedMega}
                     clearDrill={() => { setSelectedMega(null); setSelectedTopic(null); setCompareTopic(null); }} />
-        </div>
-        <div className="sidebar-section">
-          <div className="sidebar-label">Filtros<span className="count">{filters.yearMin}–{filters.yearMax}</span></div>
+        </SidebarSection>
+        <SidebarSection
+          title="Apparatus"
+          isOpen={sidebarOpen.apparatus}
+          onToggle={() => setSidebarOpen((s) => ({ ...s, apparatus: !s.apparatus }))}
+        >
+          <SidebarApparatus
+            onPresetRange={handlePresetRange}
+            onFocusProduction={handleFocusProduction}
+            onCompareTopics={handleCompareTopics}
+            onExportCsv={handleExportCsv}
+          />
+        </SidebarSection>
+        <SidebarSection
+          title="Filtros"
+          count={filters.yearMin + "–" + filters.yearMax}
+          isOpen={sidebarOpen.filters}
+          onToggle={() => setSidebarOpen((s) => ({ ...s, filters: !s.filters }))}
+        >
           <Filters filters={filters} setFilters={setFilters} options={{ countries: countryOptions }} />
-        </div>
+        </SidebarSection>
       </aside>
 
       <main className="main">
         <Breadcrumb level={level} setLevel={setLevel} mega={selectedMega} topic={selectedTopic}
                     onClearMega={() => setSelectedMega(null)} onClearTopic={() => setSelectedTopic(null)} />
-        {level !== "home" && (
-          <Scrubber filters={filters} setFilters={setFilters} yearCounts={yearCounts} />
-        )}
-        {level !== "home" && (
-          <KpiStrip articles={filtered}
-                    totalArticles={filtered.length}
-                    totalCountries={totalCountries}
-                    totalJournals={totalJournals}
-                    totalCross={totalCross} />
-        )}
         {level === "home" && <HomePage meta={meta} megatopics={data.megatopics} topics={data.topics} articles={data.articles} filtered={filtered} setLevel={setLevel} />}
+        {level === "search" && <SearchPage filtered={filtered} />}
         {level === "macro" && <MacroPage megatopics={data.megatopics} filtered={filtered} onSelectMega={(m) => { setSelectedMega(m); }} selectedMega={selectedMega} />}
         {level === "meso" && <MesoPage topics={data.topics} megatopics={data.megatopics} filtered={filtered}
                                        selectedMega={selectedMega}
@@ -382,10 +452,6 @@ function HubApp({ variant = "editorial", settings, onSettingsChange }) {
         {level === "micro" && <MicroPage filtered={filtered} topics={data.topics} megatopics={data.megatopics} dark={isDark} />}
       </main>
 
-      <Inspector level={level} selectedTopic={selectedTopic} selectedMega={selectedMega}
-                 articles={filtered}
-                 onClose={() => { setSelectedMega(null); setSelectedTopic(null); }}
-                 onDrillDown={(target) => { setLevel(target); }} />
     </div>
   );
 }

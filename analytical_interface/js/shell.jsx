@@ -123,7 +123,7 @@ function Masthead({ meta, settings, onSettingsChange }) {
     dyslexicFontEnabled: false,
     theme: "light",
     vlibrasEnabled: false,
-    language: "pt",
+    language: "en",
   };
   const setSetting = (patch) => onSettingsChange && onSettingsChange(patch);
 
@@ -221,6 +221,7 @@ function Masthead({ meta, settings, onSettingsChange }) {
 function LevelNav({ level, setLevel, counts, selectedTopic, selectedMega, clearDrill }) {
   const levels = [
     { id: "home", marker: "§", name: "Visão geral", count: "" },
+    { id: "search", marker: "IV", name: "Busca", count: "", sub: "Escrita livre" },
     { id: "macro", marker: "III", name: "Macro", count: counts.megatopics, sub: "Megatópicos" },
     { id: "meso", marker: "II", name: "Meso", count: counts.topics, sub: "Tópicos" },
     { id: "micro", marker: "I", name: "Micro", count: counts.articles, sub: "Artigos" },
@@ -319,6 +320,15 @@ function Scrubber({ filters, setFilters, yearCounts }) {
 
 // ---------------- Breadcrumb ----------------
 function Breadcrumb({ level, setLevel, mega, topic, onClearTopic, onClearMega }) {
+  if (level === "search") {
+    return (
+      <div className="breadcrumb">
+        <span className="crumb" onClick={() => setLevel("home")}>Hub</span>
+        <span className="sep">▸</span>
+        <span className="crumb active">Busca · escrita livre</span>
+      </div>
+    );
+  }
   const crumbs = [
     { id: "home", name: "Hub" },
     { id: "macro", name: "Macro · 7 megatópicos" },

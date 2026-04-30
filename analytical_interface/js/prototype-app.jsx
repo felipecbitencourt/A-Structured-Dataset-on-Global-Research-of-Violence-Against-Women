@@ -22,6 +22,7 @@ function PrototypeHub({ commandRef, onLevelChange, settings, onSettingsChange })
   const [selectedMega, setSelectedMega] = usePA(null);
   const [selectedTopic, setSelectedTopic] = usePA(null);
   const [compareTopic, setCompareTopic] = usePA(null);
+  const [sidebarOpen, setSidebarOpen] = usePA({ levels: true, apparatus: true, filters: true });
 
   // Notify parent of level changes (for breadcrumb chip in chrome)
   useEffectPA(() => { onLevelChange && onLevelChange(level); }, [level]);
@@ -64,27 +65,48 @@ function PrototypeHub({ commandRef, onLevelChange, settings, onSettingsChange })
   }
 
   const counts = { articles: fmtInt(meta.n_articles), topics: meta.n_topics, megatopics: meta.n_megatopics };
-  const yearCounts = {};
-  data.articles.forEach((a) => { yearCounts[a.year] = (yearCounts[a.year] || 0) + 1; });
-  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
-  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
-  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
   const countryOptions = Array.from(new Set(data.articles.map((a) => a.study_country))).sort();
+  const handlePresetRange = () => setFilters((f) => ({ ...f, yearMin: 2021, yearMax: 2025 }));
+  const handleFocusProduction = () => { setFilters((f) => ({ ...f, geoMode: "production" })); setLevel("micro"); };
+  const handleCompareTopics = () => { setLevel("meso"); setSelectedTopic(null); setCompareTopic(null); };
+  const handleExportCsv = () => {
+    if (typeof downloadFilteredCsv === "function") downloadFilteredCsv(filtered);
+  };
 
   return (
-    <div className="shell" data-variant="editorial">
+    <div className="shell shell--no-inspector" data-variant="editorial">
       <Masthead meta={meta} settings={settings} onSettingsChange={onSettingsChange} />
       <aside className="sidebar">
-        <div className="sidebar-section">
-          <div className="sidebar-label">Níveis<span className="count">{counts.articles + " · " + counts.topics + " · " + counts.megatopics}</span></div>
+        <SidebarSection
+          title="Níveis"
+          count={counts.articles + " · " + counts.topics + " · " + counts.megatopics}
+          isOpen={sidebarOpen.levels}
+          onToggle={() => setSidebarOpen((s) => ({ ...s, levels: !s.levels }))}
+        >
           <LevelNav level={level} setLevel={setLevel} counts={counts}
                     selectedTopic={selectedTopic} selectedMega={selectedMega}
                     clearDrill={() => { setSelectedMega(null); setSelectedTopic(null); setCompareTopic(null); }} />
-        </div>
-        <div className="sidebar-section">
-          <div className="sidebar-label">Filtros<span className="count">{filters.yearMin}–{filters.yearMax}</span></div>
+        </SidebarSection>
+        <SidebarSection
+          title="Apparatus"
+          isOpen={sidebarOpen.apparatus}
+          onToggle={() => setSidebarOpen((s) => ({ ...s, apparatus: !s.apparatus }))}
+        >
+          <SidebarApparatus
+            onPresetRange={handlePresetRange}
+            onFocusProduction={handleFocusProduction}
+            onCompareTopics={handleCompareTopics}
+            onExportCsv={handleExportCsv}
+          />
+        </SidebarSection>
+        <SidebarSection
+          title="Filtros"
+          count={filters.yearMin + "–" + filters.yearMax}
+          isOpen={sidebarOpen.filters}
+          onToggle={() => setSidebarOpen((s) => ({ ...s, filters: !s.filters }))}
+        >
           <Filters filters={filters} setFilters={setFilters} options={{ countries: countryOptions }} />
-        </div>
+        </SidebarSection>
         <div className="sidebar-section" style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px solid var(--rule)" }}>
           <div className="sidebar-label">Atalhos</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingRight: 20 }}>
@@ -99,17 +121,8 @@ function PrototypeHub({ commandRef, onLevelChange, settings, onSettingsChange })
       <main className="main">
         <Breadcrumb level={level} setLevel={setLevel} mega={selectedMega} topic={selectedTopic}
                     onClearMega={() => setSelectedMega(null)} onClearTopic={() => setSelectedTopic(null)} />
-        {level !== "home" && (
-          <Scrubber filters={filters} setFilters={setFilters} yearCounts={yearCounts} />
-        )}
-        {level !== "home" && (
-          <KpiStrip articles={filtered}
-                    totalArticles={filtered.length}
-                    totalCountries={totalCountries}
-                    totalJournals={totalJournals}
-                    totalCross={totalCross} />
-        )}
         {level === "home" && <HomePage meta={meta} megatopics={data.megatopics} topics={data.topics} articles={data.articles} filtered={filtered} setLevel={setLevel} />}
+        {level === "search" && <SearchPage filtered={filtered} />}
         {level === "macro" && <MacroPage megatopics={data.megatopics} filtered={filtered} onSelectMega={(m) => { setSelectedMega(m); setLevel("meso"); }} selectedMega={selectedMega} />}
         {level === "meso" && <MesoPage topics={data.topics} megatopics={data.megatopics} filtered={filtered}
                                        selectedMega={selectedMega}
@@ -119,10 +132,6 @@ function PrototypeHub({ commandRef, onLevelChange, settings, onSettingsChange })
         {level === "micro" && <MicroPage filtered={filtered} topics={data.topics} megatopics={data.megatopics} dark={false} />}
       </main>
 
-      <window.Inspector level={level} selectedTopic={selectedTopic} selectedMega={selectedMega}
-                 articles={filtered}
-                 onClose={() => { setSelectedMega(null); setSelectedTopic(null); }}
-                 onDrillDown={(target) => { setLevel(target); }} />
     </div>
   );
 }

@@ -5,6 +5,9 @@ const { useState: useState2, useMemo: useMemo2 } = React;
 function MesoPage({ topics, megatopics, filtered, selectedMega, onSelectTopic, selectedTopic, compareTopic, setCompareTopic }) {
   const byTopic = {};
   filtered.forEach((a) => { byTopic[a.topic_id] = (byTopic[a.topic_id] || 0) + 1; });
+  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
+  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
+  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
   let rows = topics.map((t) => ({
     ...t,
     filtered_count: byTopic[t.topic_id] || 0,
@@ -30,6 +33,13 @@ function MesoPage({ topics, megatopics, filtered, selectedMega, onSelectTopic, s
           {compareTopic ? "B: T" + compareTopic.topic_id : "—"}
         </div>
       </div>
+      <KpiStrip
+        articles={filtered}
+        totalArticles={filtered.length}
+        totalCountries={totalCountries}
+        totalJournals={totalJournals}
+        totalCross={totalCross}
+      />
 
       <div className="section-head">
         <div className="section-num">§ 01</div>
@@ -222,6 +232,9 @@ function MicroPage({ filtered, topics, megatopics, dark }) {
   const [mapMode, setMapMode] = useState2("context");
   const [yearRange, setYearRange] = useState2(null);
   const [sortKey, setSortKey] = useState2("year");
+  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
+  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
+  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
   const yearCounts = {};
   filtered.forEach((a) => { yearCounts[a.year] = (yearCounts[a.year] || 0) + 1; });
   const yearData = Object.keys(yearCounts).map((y) => ({ year: +y, count: yearCounts[y] })).sort((a, b) => a.year - b.year);
@@ -260,6 +273,13 @@ function MicroPage({ filtered, topics, megatopics, dark }) {
           {filtered.length ? (Math.min(...filtered.map(a => a.year)) + "–" + Math.max(...filtered.map(a => a.year))) : "—"}
         </div>
       </div>
+      <KpiStrip
+        articles={filtered}
+        totalArticles={filtered.length}
+        totalCountries={totalCountries}
+        totalJournals={totalJournals}
+        totalCross={totalCross}
+      />
 
       <div className="section-head">
         <div className="section-num">§ 01</div>
@@ -344,4 +364,105 @@ function MicroPage({ filtered, topics, megatopics, dark }) {
   );
 }
 
-Object.assign(window, { MesoPage, MicroPage });
+function SearchPage({ filtered }) {
+  const [query, setQuery] = useState2("");
+  const q = (query || "").trim().toLowerCase();
+
+  const matches = useMemo2(() => {
+    if (!q) return [];
+    return filtered.filter((a) => {
+      const blob = [
+        a.title,
+        a.keywords,
+        a.authors,
+        a.journal,
+        a.doi,
+        a.study_country,
+        a.researcher_country,
+        a.flow,
+      ].join(" ").toLowerCase();
+      return blob.includes(q);
+    });
+  }, [filtered, q]);
+
+  const openDoi = (doiRaw) => {
+    const doi = String(doiRaw || "").trim();
+    if (!doi) return;
+    const normalized = doi.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "").trim();
+    if (!normalized) return;
+    window.open(`https://doi.org/${encodeURIComponent(normalized)}`, "_blank", "noopener,noreferrer");
+  };
+
+  return (
+    <div>
+      <div className="page-header">
+        <div>
+          <div className="page-kicker">Nível Busca · escrita livre</div>
+          <h1>Encontre artigos por termo.</h1>
+          <p className="page-dek">Digite qualquer termo (ex.: police) para buscar em título, palavras-chave, autores, periódico, DOI e campos contextuais.</p>
+        </div>
+        <div className="page-stamp">
+          <strong>RECORTE BASE</strong><br/>
+          {fmtInt(filtered.length)} artigos<br/>
+          filtros da sidebar ativos
+        </div>
+      </div>
+
+      <div className="module" style={{ paddingTop: 16 }}>
+        <div className="sidebar-subhead" style={{ marginBottom: 10 }}><span>Campo de busca</span></div>
+        <div className="filter-row">
+          <label>Digite seu termo abaixo</label>
+          <input
+            type="text"
+            placeholder="Escreva aqui... Ex.: police, trafficking, Brazil, domestic"
+            value={query}
+            autoFocus
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="section-head">
+        <div className="section-num">§ 01</div>
+        <h2>Resultados · {fmtInt(matches.length)}</h2>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          {q ? `termo: "${q}"` : "digite para iniciar"}
+        </div>
+      </div>
+
+      {q ? (
+        <table className="ed">
+          <thead>
+            <tr>
+              <th>Ano</th>
+              <th>Título</th>
+              <th>Periódico</th>
+              <th>Keywords</th>
+              <th>Contexto</th>
+              <th>Fluxo</th>
+            </tr>
+          </thead>
+          <tbody>
+            {matches.slice(0, 120).map((a) => (
+              <tr key={a.id} onClick={() => openDoi(a.doi)} style={{ cursor: a.doi ? "pointer" : "default" }}>
+                <td className="num">{a.year}</td>
+                <td className="title">{a.title}</td>
+                <td style={{ fontStyle: "italic", color: "var(--ink-3)", fontSize: 12 }}>{a.journal}</td>
+                <td style={{ fontSize: 12, color: "var(--ink-3)" }}>{(a.keywords || "-").slice(0, 140)}</td>
+                <td className="num">{a.study_country}</td>
+                <td><span className="chip" style={{ background: FLOW_COLORS[a.flow] + "22", borderColor: FLOW_COLORS[a.flow] + "88" }}>{a.flow}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div className="footnote">Digite um termo para ver resultados.</div>
+      )}
+      {q && matches.length > 120 && (
+        <div className="footnote">exibindo 120 de {fmtInt(matches.length)} resultados</div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { MesoPage, MicroPage, SearchPage });
