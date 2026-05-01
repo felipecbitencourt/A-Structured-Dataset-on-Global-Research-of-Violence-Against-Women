@@ -1,0 +1,174 @@
+megatopic_id,list_type,rank,item,value
+1,top_keywords,1,violence,NA
+1,top_keywords,2,woman,NA
+1,top_keywords,3,partner,NA
+1,top_keywords,4,ipv,NA
+1,top_keywords,5,health,NA
+1,top_keywords,6,sexual,NA
+1,top_keywords,7,intimate,NA
+1,top_keywords,8,intimate partner,NA
+1,top_keywords,9,partner violence,NA
+1,top_keywords,10,physical,NA
+1,top_keywords,11,age,NA
+1,top_keywords,12,domestic,NA
+1,top_keywords,13,husband,NA
+1,top_keywords,14,domestic violence,NA
+1,top_keywords,15,violence woman,NA
+1,top_countries,1,ETH,14
+1,top_countries,2,IND,8
+1,top_countries,3,BRA,7
+1,top_countries,4,USA,6
+1,top_countries,5,BGD,5
+1,top_journals,1,PLOS ONE,14
+1,top_journals,2,AMERICAN JOURNAL OF PUBLIC HEALTH,2
+1,top_journals,3,BMJ OPEN,2
+1,top_journals,4,RISK MANAGEMENT AND HEALTHCARE POLICY,2
+2,top_keywords,1,violence,NA
+2,top_keywords,2,woman,NA
+2,top_keywords,3,sexual,NA
+2,top_keywords,4,ipv,NA
+2,top_keywords,5,health,NA
+2,top_keywords,6,partner,NA
+2,top_keywords,7,adolescent,NA
+2,top_keywords,8,report,NA
+2,top_keywords,9,age,NA
+2,top_keywords,10,physical,NA
+2,top_keywords,11,student,NA
+2,top_keywords,12,teacher,NA
+2,top_keywords,13,campus,NA
+2,top_keywords,14,female student,NA
+2,top_keywords,15,child,NA
+2,top_countries,1,USA,7
+2,top_countries,2,ZAF,4
+2,top_countries,3,ESP,4
+2,top_countries,4,CHN,2
+2,top_countries,5,DEU,2
+2,top_journals,1,BMC PUBLIC HEALTH,2
+2,top_journals,2,PSYCHOLOGICAL MEDICINE,2
+2,top_journals,3,ADDICTIVE BEHAVIORS,1
+2,top_journals,4,ARCHIVES OF WOMEN'S MENTAL HEALTH,1
+2,top_journals,5,HEALTH POLICY AND PLANNING,1
+3,top_keywords,1,violence,NA
+3,top_keywords,2,woman,NA
+3,top_keywords,3,health,NA
+3,top_keywords,4,partner,NA
+3,top_keywords,5,sexual,NA
+3,top_keywords,6,hiv,NA
+3,top_keywords,7,ipv,NA
+3,top_keywords,8,sex worker,NA
+3,top_keywords,9,sex,NA
+3,top_keywords,10,worker,NA
+3,top_keywords,11,sex work,NA
+3,top_keywords,12,client,NA
+3,top_keywords,13,cash,NA
+3,top_keywords,14,transfer,NA
+3,top_keywords,15,food,NA
+3,top_countries,1,USA,18
+3,top_countries,2,CAN,9
+3,top_countries,3,UGA,7
+3,top_countries,4,ZAF,7
+3,top_countries,5,KEN,5
+3,top_journals,1,AIDS CARE,2
+3,top_journals,2,BMJ OPEN,2
+3,top_journals,3,INT J DRUG POLICY,2
+3,top_journals,4,JOURNAL OF INTERPERSONAL VIOLENCE,2
+3,top_journals,5,BMJ GLOBAL HEALTH,1
+4,top_keywords,1,woman,NA
+4,top_keywords,2,violence,NA
+4,top_keywords,3,health,NA
+4,top_keywords,4,sexual,NA
+4,top_keywords,5,partner,NA
+4,top_keywords,6,report,NA
+4,top_keywords,7,ipv,NA
+4,top_keywords,8,conflict,NA
+4,top_keywords,9,war,NA
+4,top_keywords,10,men,NA
+4,top_keywords,11,refugee,NA
+4,top_keywords,12,camp,NA
+4,top_keywords,13,service,NA
+4,top_keywords,14,migrant,NA
+4,top_keywords,15,migration,NA
+4,top_countries,1,UGA,4
+4,top_countries,2,SSD,3
+4,top_countries,3,PNG,3
+4,top_countries,4,ETH,3
+4,top_countries,5,KEN,2
+4,top_journals,1,BMJ OPEN,2
+4,top_journals,2,PLOS ONE,2
+4,top_journals,3,"CONFLICT AND HEALTH, 2016",1
+4,top_journals,4,INTERNATIONAL MIGRATION,1
+4,top_journals,5,J OF MARRIAGE AND FAMILY 2023.85:7-32,1
+5,top_keywords,1,violence,NA
+5,top_keywords,2,woman,NA
+5,top_keywords,3,health,NA
+5,top_keywords,4,partner,NA
+5,top_keywords,5,ipv,NA
+5,top_keywords,6,sexual,NA
+5,top_keywords,7,report,NA
+5,top_keywords,8,experience,NA
+5,top_keywords,9,mental,NA
+5,top_keywords,10,mental health,NA
+5,top_keywords,11,disorder,NA
+5,top_keywords,12,hiv,NA
+5,top_keywords,13,sex,NA
+5,top_keywords,14,age,NA
+5,top_keywords,15,covid,NA
+5,top_countries,1,USA,15
+5,top_countries,2,BRA,7
+5,top_countries,3,GBR,6
+5,top_countries,4,ZAF,4
+5,top_countries,5,LBN,4
+5,top_journals,1,PLOS ONE,10
+5,top_journals,2,AIDS AND BEHAVIOR,3
+5,top_journals,3,BMC PUBLIC HEALTH,3
+5,top_journals,4,PSYCHOLOGICAL TRAUMA-THEORY RESEARCH PRACTICE AND POLICY,3
+6,top_keywords,1,woman,NA
+6,top_keywords,2,violence,NA
+6,top_keywords,3,health,NA
+6,top_keywords,4,ipv,NA
+6,top_keywords,5,partner,NA
+6,top_keywords,6,sexual,NA
+6,top_keywords,7,report,NA
+6,top_keywords,8,intimate,NA
+6,top_keywords,9,workplace,NA
+6,top_keywords,10,country,NA
+6,top_keywords,11,child marriage,NA
+6,top_keywords,12,marriage,NA
+6,top_keywords,13,neighborhood,NA
+6,top_keywords,14,social,NA
+6,top_keywords,15,partner violence,NA
+6,top_countries,1,USA,13
+6,top_countries,2,CAN,4
+6,top_countries,3,ESP,4
+6,top_countries,4,ETH,4
+6,top_countries,5,BRA,3
+6,top_journals,1,PLOS ONE,7
+6,top_journals,2,BMC PUBLIC HEALTH,3
+6,top_journals,3,AMERICAN JOURNAL OF EPIDEMIOLOGY,1
+6,top_journals,4,"JOURNAL OF FORENSIC AND LEGAL MEDICINE, 80 (2021) 102174",1
+6,top_journals,5,"JOURNAL OF HEALTH, GLOBAL",1
+7,top_keywords,1,violence,NA
+7,top_keywords,2,woman,NA
+7,top_keywords,3,sexual,NA
+7,top_keywords,4,sexual violence,NA
+7,top_keywords,5,health,NA
+7,top_keywords,6,partner,NA
+7,top_keywords,7,death,NA
+7,top_keywords,8,rape,NA
+7,top_keywords,9,husband,NA
+7,top_keywords,10,factor,NA
+7,top_keywords,11,report,NA
+7,top_keywords,12,homicide,NA
+7,top_keywords,13,victim,NA
+7,top_keywords,14,sexual homicide,NA
+7,top_keywords,15,firearm,NA
+7,top_countries,1,USA,9
+7,top_countries,2,BRA,7
+7,top_countries,3,ETH,2
+7,top_countries,4,NPL,2
+7,top_countries,5,IRN,2
+7,top_journals,1,PLOS ONE,3
+7,top_journals,2,"AMERICAN JOURNAL OF PREVENTIVE MEDICINE, 62 (2022) 529-537",1
+7,top_journals,3,HOMICIDE STUDIES 2023.27:472-492,1
+7,top_journals,4,J INTERPERSONAL VIOLENCE,1
+7,top_journals,5,JOURNAL OF INTERPERSONAL VIOLENCE,1
