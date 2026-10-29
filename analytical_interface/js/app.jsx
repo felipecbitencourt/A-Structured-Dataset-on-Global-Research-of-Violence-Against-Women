@@ -1,136 +1,16 @@
-/* global React, ReactDOM */
-const { useState: useStateApp, useEffect: useEffectApp, useMemo: useMemoApp } = React;
+/* global React, t */
+const { useState: useStateApp, useEffect: useEffectApp, useMemo: useMemoApp, useCallback: useCallbackApp } = React;
 
-// ---------- Build sample articles from topics.json + sample-data.js helpers ----------
-function buildSampleArticles(topics, megatopics) {
-  const COUNTRIES = [
-    ["USA", "United States", 39.78, -100.44, "América"],
-    ["BRA", "Brasil", -14.2, -51.9, "América"],
-    ["MEX", "México", 23.65, -102.0, "América"],
-    ["CAN", "Canadá", 61.07, -107.99, "América"],
-    ["GBR", "Reino Unido", 51.5, -0.12, "Europa"],
-    ["FRA", "França", 46.22, 2.21, "Europa"],
-    ["DEU", "Alemanha", 51.16, 10.45, "Europa"],
-    ["ESP", "Espanha", 40.46, -3.74, "Europa"],
-    ["ITA", "Itália", 41.87, 12.56, "Europa"],
-    ["SWE", "Suécia", 60.12, 18.64, "Europa"],
-    ["IND", "Índia", 20.59, 78.96, "Ásia"],
-    ["CHN", "China", 35.86, 104.19, "Ásia"],
-    ["TUR", "Turquia", 38.96, 35.24, "Ásia"],
-    ["JPN", "Japão", 36.2, 138.25, "Ásia"],
-    ["PAK", "Paquistão", 30.38, 69.35, "Ásia"],
-    ["NPL", "Nepal", 28.39, 84.12, "Ásia"],
-    ["LBN", "Líbano", 33.85, 35.86, "Ásia"],
-    ["ETH", "Etiópia", 9.14, 40.49, "África"],
-    ["KEN", "Quênia", -0.02, 37.9, "África"],
-    ["NGA", "Nigéria", 9.08, 8.67, "África"],
-    ["ZAF", "África do Sul", -30.56, 22.94, "África"],
-    ["UGA", "Uganda", 1.37, 32.29, "África"],
-    ["GHA", "Gana", 7.95, -1.03, "África"],
-    ["TZA", "Tanzânia", -6.37, 34.89, "África"],
-    ["AUS", "Austrália", -25.27, 133.77, "Oceania"],
-    ["COL", "Colômbia", 4.57, -74.3, "América"],
-  ];
-  const FLOWS = ["Domestic", "Cross-continental", "Multi-national", "Intra-continental"];
-  const FLOW_W = [0.48, 0.18, 0.22, 0.12];
-  const JOURNALS = ["PLOS ONE", "BMC Public Health", "The Lancet Glob Health", "Violence Against Women", "J Interpers Violence", "Soc Sci Med", "Global Health Action"];
-  const TITLE_FRAGS = [
-    "Determinants of {topic} in {country}: a population-based study",
-    "Patterns and predictors of {topic} among women in {country}",
-    "A multilevel analysis of {topic} in {country}",
-    "Longitudinal trajectories of {topic}: evidence from {country}",
-    "{topic} and its association with mental health outcomes in {country}",
-    "Beyond prevalence: rethinking {topic} in {country}",
-    "Spatial heterogeneity of {topic} across regions of {country}",
-    "Intersectional approaches to {topic}: a case study in {country}",
-  ];
+const FLOW_SET = new Set(FLOWS);
+const DEFAULT_FILTERS = { yearMin: YEAR_MIN, yearMax: YEAR_MAX, country: "", flow: "", geoMode: "context" };
 
-  let seed = 17;
-  const rng = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
-  const pickW = (items, ws) => { const r = rng(); let acc = 0; for (let i = 0; i < items.length; i++) { acc += ws[i]; if (r < acc) return items[i]; } return items[items.length - 1]; };
-
-  const arts = [];
-  const totalCount = topics.reduce((s, t) => s + (t.article_count || 1), 0);
-  const target = 580;
-  topics.forEach((t) => {
-    const n = Math.max(1, Math.round((t.article_count || 1) / totalCount * target));
-    for (let i = 0; i < n; i++) {
-      const yr = Math.max(2011, Math.min(2025, Math.round((t.mean_year || 2018) + (rng() - 0.5) * 2 * (t.year_std || 3))));
-      const c = COUNTRIES[Math.floor(rng() * COUNTRIES.length)];
-      const sameRes = rng() < 0.55;
-      const r = sameRes ? c : COUNTRIES[Math.floor(rng() * COUNTRIES.length)];
-      let flow = pickW(FLOWS, FLOW_W);
-      if (c[0] === r[0]) flow = "Domestic";
-      else if (c[4] !== r[4]) flow = rng() < 0.65 ? "Cross-continental" : "Multi-national";
-      const tplate = TITLE_FRAGS[Math.floor(rng() * TITLE_FRAGS.length)];
-      const title = tplate.replace("{topic}", (t.topic_description || "the phenomenon").toLowerCase()).replace("{country}", c[1]);
-      arts.push({
-        id: arts.length + 1,
-        year: yr,
-        study_country: c[0], study_country_name: c[1], study_continent: c[4],
-        researcher_country: r[0], researcher_country_name: r[1], researcher_continent: r[4],
-        topic_id: t.topic_id, topic_description: t.topic_description,
-        megatopic_id: t.megatopic_id,
-        title, journal: JOURNALS[Math.floor(rng() * JOURNALS.length)],
-        flow,
-        latitude: c[2] + (rng() - 0.5) * 4, longitude: c[3] + (rng() - 0.5) * 4,
-      });
-    }
-  });
-  return arts.slice(0, target);
+// "BRA; USA" -> ["BRA", "USA"]; drops empty and "NA" entries.
+function splitList(value) {
+  return String(value ?? "").split(";").map((s) => s.trim()).filter((s) => s && s.toUpperCase() !== "NA");
 }
 
-// ---------- enrich topics & megatopics with derived fields ----------
-function enrichData(topicsRaw, megatopicsRaw, articles) {
-  const topicArticleCount = {}, topicYearSeries = {}, topicCountries = {}, topicFlow = {};
-  articles.forEach((a) => {
-    topicArticleCount[a.topic_id] = (topicArticleCount[a.topic_id] || 0) + 1;
-    if (!topicYearSeries[a.topic_id]) topicYearSeries[a.topic_id] = {};
-    topicYearSeries[a.topic_id][a.year] = (topicYearSeries[a.topic_id][a.year] || 0) + 1;
-    if (!topicCountries[a.topic_id]) topicCountries[a.topic_id] = new Set();
-    topicCountries[a.topic_id].add(a.study_country);
-    if (!topicFlow[a.topic_id]) topicFlow[a.topic_id] = {};
-    topicFlow[a.topic_id][a.flow] = (topicFlow[a.topic_id][a.flow] || 0) + 1;
-  });
-  const topics = topicsRaw.map((t) => {
-    const series = [];
-    for (let y = 2011; y <= 2025; y++) series.push(topicYearSeries[t.topic_id]?.[y] || 0);
-    const flowDist = Object.keys(topicFlow[t.topic_id] || {}).map((k) => ({ label: k, value: topicFlow[t.topic_id][k] }));
-    return {
-      ...t,
-      article_count: topicArticleCount[t.topic_id] || t.article_count || 0,
-      n_countries: (topicCountries[t.topic_id] || new Set()).size,
-      yearly_series: series,
-      flow_distribution: flowDist,
-      coherence_cv: t.coherence_cv ?? (0.5 + Math.random() * 0.4),
-      growth_rate_5yr: t.growth_rate_5yr ?? ((Math.random() - 0.3) * 2),
-    };
-  }).sort((a, b) => b.article_count - a.article_count);
-
-  const megaCount = {}, megaCountries = {}, megaTopicCount = {};
-  articles.forEach((a) => { megaCount[a.megatopic_id] = (megaCount[a.megatopic_id] || 0) + 1; if (!megaCountries[a.megatopic_id]) megaCountries[a.megatopic_id] = new Set(); megaCountries[a.megatopic_id].add(a.study_country); });
-  topics.forEach((t) => { megaTopicCount[t.megatopic_id] = (megaTopicCount[t.megatopic_id] || 0) + 1; });
-  const megatopics = megatopicsRaw.map((m) => {
-    const topTopics = topics.filter(t => t.megatopic_id === m.megatopic_id).sort((a, b) => b.article_count - a.article_count);
-    const topCountries = {};
-    articles.filter(a => a.megatopic_id === m.megatopic_id).forEach((a) => { topCountries[a.study_country] = (topCountries[a.study_country] || 0) + 1; });
-    const topCountriesArr = Object.entries(topCountries).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([c]) => c);
-    return {
-      ...m,
-      article_count: megaCount[m.megatopic_id] || 0,
-      n_topics: megaTopicCount[m.megatopic_id] || m.n_topics || 0,
-      n_countries: (megaCountries[m.megatopic_id] || new Set()).size,
-      coherence_cv_mean: m.coherence_cv_mean ?? topTopics.reduce((s, t) => s + t.coherence_cv, 0) / Math.max(1, topTopics.length),
-      growth_rate_5yr: m.growth_rate_5yr ?? topTopics.reduce((s, t) => s + t.growth_rate_5yr, 0) / Math.max(1, topTopics.length),
-      top_countries: topCountriesArr.join(";"),
-      top_topics: topTopics.slice(0, 5),
-    };
-  }).sort((a, b) => b.article_count - a.article_count);
-
-  return { topics, megatopics };
-}
-
-function normalizeArticles(rawArticles) {
+// ---------- articles ----------
+function normalizeArticles(rawArticles, topicsRaw) {
   const sanitizeJournal = (rawJournal) => {
     let clean = String(rawJournal || "").replace(/\s+/g, " ").trim();
     if (!clean) return "-";
@@ -149,34 +29,207 @@ function normalizeArticles(rawArticles) {
     return clean || "-";
   };
 
-  return (rawArticles || []).map((a, idx) => {
-    const flowRaw = (a.research_flow || "").trim();
-    const flow = flowRaw === "Domestic" || flowRaw === "Cross-continental" || flowRaw === "Multi-national" || flowRaw === "Intra-continental"
-      ? flowRaw
-      : "Domestic";
+  // The topic table is the reference for topic -> megatopic.
+  const megaOfTopic = {};
+  (topicsRaw || []).forEach((tp) => { megaOfTopic[Number(tp.topic_id)] = Number(tp.megatopic_id); });
 
-    const studyCountry = String(a.study_country || "").split(";")[0].trim();
-    const researcherCountry = String(a.researcher_country || "").split(";")[0].trim();
+  return (rawArticles || []).map((a, idx) => {
+    const flowRaw = String(a.research_flow || "").trim();
+    const topicId = Number(a.topic_id) || 0;
+    const declaredMega = Number(a.megatopic_id) || 0;
+    const megatopicId = megaOfTopic[topicId] || declaredMega;
+    if (megaOfTopic[topicId] && declaredMega && declaredMega !== megaOfTopic[topicId]) {
+      console.warn(`article ${a.article_id}: megatopic_id ${declaredMega} does not match topic ${topicId} (M${megaOfTopic[topicId]}); using the topic table`);
+    }
+    const studyCountries = splitList(a.study_country);
+    const researcherCountries = splitList(a.researcher_country);
 
     return {
-      id: a.article_id || idx + 1,
+      id: Number(a.article_id) || idx + 1,
       doi: String(a.doi || "").trim(),
       year: Number(a.year) || 0,
-      study_country: studyCountry,
-      study_country_name: studyCountry,
-      researcher_country: researcherCountry,
-      researcher_country_name: researcherCountry,
-      topic_id: Number(a.topic_id) || 0,
-      megatopic_id: Number(a.megatopic_id) || 0,
+      study_countries: studyCountries,
+      researcher_countries: researcherCountries,
+      topic_id: topicId,
+      megatopic_id: megatopicId,
       title: a.title || "Untitled",
       keywords: String(a.keywords || "").trim(),
       authors: String(a.authors || "").trim(),
       journal: sanitizeJournal(a.journal),
-      flow,
-      latitude: Number(a.latitude) || 0,
-      longitude: Number(a.longitude) || 0,
+      flow: FLOW_SET.has(flowRaw) ? flowRaw : "",
+      raw: a,
     };
   }).filter((a) => a.year > 0 && a.topic_id > 0 && a.megatopic_id > 0);
+}
+
+// ---------- topics & megatopics: everything except the model metrics is derived from the articles ----------
+function numOrNull(v) { return v === "" || v === null || v === undefined || !Number.isFinite(Number(v)) ? null : Number(v); }
+function growthRate(prev, last) {
+  if (prev > 0) return (last - prev) / prev;
+  return last > 0 ? null : 0;
+}
+function mean(values) {
+  const ok = values.filter((v) => v !== null);
+  return ok.length ? ok.reduce((s, v) => s + v, 0) / ok.length : null;
+}
+
+function enrichData(topicsRaw, megatopicsRaw, articles) {
+  const groupBy = (key) => {
+    const out = {};
+    articles.forEach((a) => {
+      const g = out[a[key]] || (out[a[key]] = { n: 0, years: {}, countries: {}, flows: {}, prev: 0, last: 0 });
+      g.n += 1;
+      g.years[a.year] = (g.years[a.year] || 0) + 1;
+      a.study_countries.forEach((c) => { g.countries[c] = (g.countries[c] || 0) + 1; });
+      g.flows[a.flow] = (g.flows[a.flow] || 0) + 1;
+      if (a.year >= 2016 && a.year <= 2020) g.prev += 1;
+      if (a.year >= 2021 && a.year <= 2025) g.last += 1;
+    });
+    return out;
+  };
+  const byTopic = groupBy("topic_id");
+  const byMega = groupBy("megatopic_id");
+  const empty = { n: 0, years: {}, countries: {}, flows: {}, prev: 0, last: 0 };
+
+  const topics = topicsRaw.map((tp) => {
+    const g = byTopic[tp.topic_id] || empty;
+    const series = [];
+    for (let y = YEAR_MIN; y <= YEAR_MAX; y++) series.push(g.years[y] || 0);
+    return {
+      ...tp,
+      article_count: g.n,
+      n_countries: Object.keys(g.countries).length,
+      yearly_series: series,
+      flow_distribution: Object.keys(g.flows).map((k) => ({ label: k, value: g.flows[k] })).sort((a, b) => b.value - a.value),
+      coherence_cv: numOrNull(tp.coherence_cv),
+      growth_rate_5yr: growthRate(g.prev, g.last),
+      growth_prev: g.prev,
+      growth_last: g.last,
+    };
+  }).sort((a, b) => b.article_count - a.article_count);
+
+  const megatopics = megatopicsRaw.map((m) => {
+    const g = byMega[m.megatopic_id] || empty;
+    const topTopics = topics.filter((tp) => tp.megatopic_id === m.megatopic_id);
+    return {
+      ...m,
+      article_count: g.n,
+      n_topics: topTopics.length || m.n_topics || 0,
+      n_countries: Object.keys(g.countries).length,
+      coherence_cv_mean: mean(topTopics.map((tp) => tp.coherence_cv)),
+      growth_rate_5yr: growthRate(g.prev, g.last),
+      growth_prev: g.prev,
+      growth_last: g.last,
+      top_countries: Object.entries(g.countries).sort((a, b) => b[1] - a[1]).slice(0, 5).map(([c]) => c),
+      top_topics: topTopics.slice(0, 5),
+    };
+  }).sort((a, b) => b.article_count - a.article_count);
+
+  return { topics, megatopics };
+}
+
+// ---------- shareable state in the URL hash ----------
+function readHashState() {
+  const p = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const num = (k) => (p.has(k) && Number.isFinite(Number(p.get(k))) ? Number(p.get(k)) : null);
+  const level = p.get("v");
+  const yearMin = num("y0") !== null ? clampYear(num("y0")) : YEAR_MIN;
+  const yearMax = num("y1") !== null ? clampYear(num("y1")) : YEAR_MAX;
+  return {
+    level: ["home", "search", "macro", "meso", "micro"].includes(level) ? level : "home",
+    filters: {
+      yearMin: Math.min(yearMin, yearMax),
+      yearMax: Math.max(yearMin, yearMax),
+      country: (p.get("c") || "").toUpperCase(),
+      flow: FLOW_SET.has(p.get("f")) ? p.get("f") : "",
+      geoMode: p.get("map") === "production" ? "production" : "context",
+    },
+    mega: num("m"),
+    topic: num("t"),
+    compare: num("b"),
+  };
+}
+
+function writeHashState({ level, filters, mega, topic, compare }) {
+  const p = new URLSearchParams();
+  if (level !== "home") p.set("v", level);
+  if (filters.yearMin !== YEAR_MIN) p.set("y0", filters.yearMin);
+  if (filters.yearMax !== YEAR_MAX) p.set("y1", filters.yearMax);
+  if (filters.country) p.set("c", filters.country);
+  if (filters.flow) p.set("f", filters.flow);
+  if (filters.geoMode !== "context") p.set("map", filters.geoMode);
+  if (mega) p.set("m", mega);
+  if (topic) p.set("t", topic);
+  if (compare) p.set("b", compare);
+  const hash = p.toString();
+  const url = window.location.pathname + window.location.search + (hash ? "#" + hash : "");
+  if (url !== window.location.pathname + window.location.search + window.location.hash) {
+    window.history.replaceState(null, "", url);
+  }
+}
+
+// ---------- downloads ----------
+function selectionSummary(state) {
+  const f = state.filters;
+  return {
+    years: [f.yearMin, f.yearMax],
+    study_country: f.country || null,
+    research_flow: f.flow || null,
+    megatopic_id: state.mega || null,
+    topic_id: state.topic || null,
+  };
+}
+
+function saveFile(name, text, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+function fileStamp(meta) {
+  return `vaw-articles_${meta?.version || "data"}_${new Date().toISOString().slice(0, 10)}`;
+}
+
+// CSV keeps every published column, unchanged, for the selected articles.
+function downloadCsv(rows, meta) {
+  const columns = rows.length ? Object.keys(rows[0].raw) : [];
+  const esc = (value) => `"${String(value ?? "").replace(/"/g, "\"\"")}"`;
+  const csv = [columns.join(",")]
+    .concat(rows.map((row) => columns.map((col) => esc(row.raw[col])).join(",")))
+    .join("\n");
+  saveFile(fileStamp(meta) + ".csv", "﻿" + csv, "text/csv;charset=utf-8;");
+}
+
+// JSON carries the provenance: dataset version, checksum, the selection used and the link that reproduces it.
+function downloadJson(rows, meta, state) {
+  const payload = {
+    dataset: "A Structured Dataset on Global Research of Violence Against Women",
+    version: meta?.version || null,
+    release_date: meta?.date || null,
+    source_md5: meta?.source_hash || null,
+    exported_at: new Date().toISOString(),
+    view_url: window.location.href,
+    selection: selectionSummary(state),
+    n_articles: rows.length,
+    articles: rows.map((r) => r.raw),
+  };
+  saveFile(fileStamp(meta) + ".json", JSON.stringify(payload, null, 2), "application/json");
+}
+
+function copyViewLink(notify) {
+  const done = () => notify && notify(t("toast.linkCopied"));
+  const fail = () => notify && notify(t("toast.linkFailed"));
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(window.location.href).then(done, fail);
+  } else {
+    fail();
+  }
 }
 
 function SidebarSection({ title, count, isOpen, onToggle, children }) {
@@ -199,264 +252,195 @@ function SidebarSection({ title, count, isOpen, onToggle, children }) {
   );
 }
 
-function downloadFilteredCsv(rows) {
-  const list = Array.isArray(rows) ? rows : [];
-  const columns = ["id", "year", "title", "journal", "study_country", "researcher_country", "flow", "topic_id", "megatopic_id", "doi"];
-  const esc = (value) => `"${String(value ?? "").replace(/"/g, "\"\"")}"`;
-  const csv = [columns.join(",")]
-    .concat(list.map((row) => columns.map((col) => esc(row[col])).join(",")))
-    .join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  const stamp = new Date().toISOString().slice(0, 10);
-  link.href = url;
-  link.download = `filtered_articles_${stamp}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
-
-function SidebarApparatus({ onPresetRange, onFocusProduction, onCompareTopics, onExportCsv }) {
+function SidebarGuide({ actions }) {
   return (
     <div className="sidebar-apparatus">
-      <h3 className="sidebar-apparatus-title">Como ler este hub</h3>
-      <p className="sidebar-apparatus-text">
-        Comece pela <strong>pergunta de pesquisa</strong>, não pelo nível. As três escalas — micro, meso, macro — compartilham filtros via URL. Selecione um megatópico para descer ao meso; um tópico para descer ao micro; em qualquer ponto, edite o recorte temporal pela escala superior.
-      </p>
-      <div className="sidebar-subhead"><span>Atalhos editoriais</span></div>
+      <h3 className="sidebar-apparatus-title">{t("guide.title")}</h3>
+      <p className="sidebar-apparatus-text">{t("guide.body")}</p>
+      <div className="sidebar-subhead"><span>{t("guide.actions")}</span></div>
       <div className="sidebar-shortcuts">
-        <button type="button" className="sidebar-action-btn" onClick={onPresetRange}>Recorte 2021–2025 <span>›</span></button>
-        <button type="button" className="sidebar-action-btn" onClick={onFocusProduction}>Foco em produção (mapa) <span>›</span></button>
-        <button type="button" className="sidebar-action-btn" onClick={onCompareTopics}>Comparar 2 tópicos (A/B) <span>›</span></button>
-        <button type="button" className="sidebar-action-btn" onClick={onExportCsv}>Exportar CSV filtrado <span>›</span></button>
+        {actions.map((a) => (
+          <button key={a.id} type="button" className="sidebar-action-btn" onClick={a.run}>{a.label} <span aria-hidden="true">›</span></button>
+        ))}
       </div>
     </div>
   );
 }
 
-// ---------- Inspector right panel ----------
-function Inspector({ level, selectedTopic, selectedMega, articles, onClose, onDrillDown }) {
-  if (level === "home") {
-    return (
-      <aside className="inspector">
-        <div className="inspector-head"><span>Apparatus</span></div>
-        <div>
-          <h2>Como ler este hub</h2>
-          <p style={{ fontFamily: "var(--serif)", fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}>
-            Comece pela <strong>pergunta de pesquisa</strong>, não pelo nível. As três escalas — micro, meso, macro — compartilham filtros via URL. Selecione um megatópico para descer ao meso; um tópico para descer ao micro; em qualquer ponto, edite o recorte temporal pela escala superior.
-          </p>
-        </div>
-        <div>
-          <div className="inspector-head" style={{ marginBottom: 8 }}><span>Atalhos editoriais</span></div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            <button className="drill-btn">Recorte 2021–2025 <span>›</span></button>
-            <button className="drill-btn">Foco em produção (mapa) <span>›</span></button>
-            <button className="drill-btn">Comparar 2 tópicos (A/B) <span>›</span></button>
-            <button className="drill-btn">Exportar CSV filtrado <span>›</span></button>
-          </div>
-        </div>
-      </aside>
-    );
-  }
-
-  if (level === "macro" && selectedMega) {
-    return (
-      <aside className="inspector">
-        <div className="inspector-head"><span>Megatópico M{selectedMega.megatopic_id}</span><span className="close" onClick={onClose}>fechar ✕</span></div>
-        <div>
-          <h2>{selectedMega.megatopic_description}</h2>
-          <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", color: "var(--ink-3)", fontSize: 13, lineHeight: 1.5 }}>
-            {selectedMega.n_topics} tópicos · {fmtInt(selectedMega.article_count)} artigos · {selectedMega.n_countries} países
-          </p>
-        </div>
-        <div className="meta-row">
-          <span className="k">Cv médio</span><span className="num">{selectedMega.coherence_cv_mean.toFixed(3)}</span>
-          <span className="k">Cresc. 5a</span><span className="num">{(selectedMega.growth_rate_5yr * 100).toFixed(0)}%</span>
-          <span className="k">Tópicos</span><span className="num">{selectedMega.n_topics}</span>
-          <span className="k">Países</span><span className="num">{selectedMega.n_countries}</span>
-        </div>
-        <div>
-          <div className="inspector-head" style={{ marginBottom: 8 }}><span>Tópicos no megatópico</span></div>
-          <div className="scrollbox">
-            <BarList
-              items={selectedMega.top_topics.map((t) => ({ label: t.topic_description, value: t.article_count, id: t.topic_id }))}
-              max={Math.max(...selectedMega.top_topics.map(t => t.article_count), 1)}
-              onClick={(it) => onDrillDown("meso")}
-            />
-          </div>
-        </div>
-        <div>
-          <div className="inspector-head" style={{ marginBottom: 8 }}><span>Top países (contexto)</span></div>
-          <div className="kw-cloud">
-            {selectedMega.top_countries.split(";").filter(Boolean).map((c) => <span key={c} className="kw">{c}</span>)}
-          </div>
-        </div>
-        <button className="drill-btn" onClick={() => onDrillDown("meso")}>Descer para Meso ▸ {selectedMega.megatopic_description.slice(0, 24)}…</button>
-      </aside>
-    );
-  }
-
-  if (level === "meso" && selectedTopic) {
-    return (
-      <aside className="inspector">
-        <div className="inspector-head"><span>Tópico T{selectedTopic.topic_id}</span><span className="close" onClick={onClose}>fechar ✕</span></div>
-        <div>
-          <h2>{selectedTopic.topic_description}</h2>
-          <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", color: "var(--ink-3)", fontSize: 13, lineHeight: 1.5 }}>
-            Megatópico M{selectedTopic.megatopic_id} · {fmtInt(selectedTopic.article_count)} artigos no recorte
-          </p>
-        </div>
-        <div className="meta-row">
-          <span className="k">Cv</span><span className="num">{selectedTopic.coherence_cv.toFixed(3)}</span>
-          <span className="k">Cresc. 5a</span><span className="num">{(selectedTopic.growth_rate_5yr * 100).toFixed(0)}%</span>
-          <span className="k">Países</span><span className="num">{selectedTopic.n_countries}</span>
-          <span className="k">Ano médio</span><span className="num">{Math.round(selectedTopic.mean_year || 2018)}</span>
-        </div>
-        <div style={{ borderTop: "1px solid var(--rule)", paddingTop: 16 }}>
-          <div className="inspector-head" style={{ marginBottom: 12 }}><span>Perfil do tópico</span></div>
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <Radar metrics={[
-              { label: "Volume", value: Math.min(1, selectedTopic.article_count / 60) },
-              { label: "Coerência", value: Math.min(1, Math.max(0, (selectedTopic.coherence_cv - 0.4) / 0.5)) },
-              { label: "Crescimento", value: Math.min(1, Math.max(0, selectedTopic.growth_rate_5yr / 2)) },
-              { label: "Geografia", value: Math.min(1, selectedTopic.n_countries / 20) },
-              { label: "Cross-flow", value: 0.5 + Math.random() * 0.4 },
-            ]} />
-          </div>
-        </div>
-        <button className="drill-btn" onClick={() => onDrillDown("micro")}>Ver artigos deste tópico ▸</button>
-      </aside>
-    );
-  }
-
+function KeyboardRow({ k, v }) {
   return (
-    <aside className="inspector">
-      <div className="inspector-head"><span>Recorte ativo</span></div>
-      <div>
-        <h2 style={{ fontSize: 16 }}>{fmtInt(articles.length)} artigos no painel</h2>
-        <p style={{ fontFamily: "var(--serif)", fontStyle: "italic", color: "var(--ink-3)", fontSize: 13 }}>
-          Selecione um item da tabela para abrir sua ficha.
-        </p>
-      </div>
-      <div>
-        <div className="inspector-head" style={{ marginBottom: 8 }}><span>Ações</span></div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <button className="drill-btn">Exportar CSV filtrado <span>›</span></button>
-          <button className="drill-btn">Exportar JSON filtrado <span>›</span></button>
-          <button className="drill-btn">Copiar URL com filtros <span>›</span></button>
-        </div>
-      </div>
-    </aside>
+    <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+      <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-3)", letterSpacing: "0.04em" }}>{v}</span>
+      <kbd style={{ fontFamily: "var(--mono)", fontSize: 10, padding: "2px 5px", border: "1px solid var(--rule-strong)", color: "var(--ink-2)", background: "var(--paper-2)" }}>{k}</kbd>
+    </div>
   );
 }
 
 // ---------- App ----------
-function HubApp({ variant = "editorial", settings, onSettingsChange }) {
+// `commandRef` lets the command palette and keyboard shortcuts drive the hub.
+function HubApp({ commandRef, settings, onSettingsChange, onShowTour, notify, lang }) {
   const meta = useRes("data/meta.json");
   const topicsRaw = useDatasetRes("topics");
   const megatopicsRaw = useDatasetRes("megatopics");
   const articlesRaw = useDatasetRes("articles");
 
   const data = useMemoApp(() => {
-    if (!topicsRaw || !megatopicsRaw || !articlesRaw) return null;
-    const arts = normalizeArticles(articlesRaw);
-    const enriched = enrichData(topicsRaw, megatopicsRaw, arts);
+    if (!topicsRaw.data || !megatopicsRaw.data || !articlesRaw.data) return null;
+    const arts = normalizeArticles(articlesRaw.data, topicsRaw.data);
+    const enriched = enrichData(topicsRaw.data, megatopicsRaw.data, arts);
     return { articles: arts, ...enriched };
-  }, [topicsRaw, megatopicsRaw, articlesRaw]);
+  }, [topicsRaw.data, megatopicsRaw.data, articlesRaw.data]);
 
-  const [level, setLevel] = useStateApp("home");
-  const [filters, setFilters] = useStateApp({ yearMin: 2011, yearMax: 2025, country: "", flow: "", geoMode: "context" });
+  const initial = useMemoApp(() => readHashState(), []);
+  const [level, setLevel] = useStateApp(initial.level);
+  const [filters, setFilters] = useStateApp(initial.filters);
   const [selectedMega, setSelectedMega] = useStateApp(null);
   const [selectedTopic, setSelectedTopic] = useStateApp(null);
   const [compareTopic, setCompareTopic] = useStateApp(null);
-  const [sidebarOpen, setSidebarOpen] = useStateApp({ levels: true, apparatus: true, filters: true });
+  const [sidebarOpen, setSidebarOpen] = useStateApp({ levels: true, guide: true, filters: true });
+  const dark = settings.theme === "dark";
+
+  // Restore the selection from the link once the tables are loaded.
+  useEffectApp(() => {
+    if (!data) return;
+    const findTopic = (id) => data.topics.find((tp) => tp.topic_id === id) || null;
+    if (initial.mega) setSelectedMega(data.megatopics.find((m) => m.megatopic_id === initial.mega) || null);
+    if (initial.topic) setSelectedTopic(findTopic(initial.topic));
+    if (initial.compare) setCompareTopic(findTopic(initial.compare));
+  }, [data]);
 
   useEffectApp(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-  }, [level]);
+    if (!data) return;
+    writeHashState({ level, filters, mega: selectedMega?.megatopic_id, topic: selectedTopic?.topic_id, compare: compareTopic?.topic_id });
+  }, [data, level, filters, selectedMega, selectedTopic, compareTopic]);
 
-  const filtered = useMemoApp(() => {
+  useEffectApp(() => { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }, [level]);
+
+  const clearDrill = () => { setSelectedMega(null); setSelectedTopic(null); setCompareTopic(null); };
+  const state = { filters, mega: selectedMega?.megatopic_id, topic: selectedTopic?.topic_id };
+
+  // Three nested selections: macro ignores the drill-down, meso ignores the topic, micro and search use everything.
+  const base = useMemoApp(() => {
     if (!data) return [];
     return data.articles.filter((a) => {
       if (a.year < filters.yearMin || a.year > filters.yearMax) return false;
-      if (filters.country && a.study_country !== filters.country) return false;
+      if (filters.country && !a.study_countries.includes(filters.country)) return false;
       if (filters.flow && a.flow !== filters.flow) return false;
-      if (selectedMega && a.megatopic_id !== selectedMega.megatopic_id) return false;
-      if (selectedTopic && a.topic_id !== selectedTopic.topic_id) return false;
       return true;
     });
-  }, [data, filters, selectedMega, selectedTopic]);
+  }, [data, filters]);
+  const inMega = useMemoApp(() => (selectedMega ? base.filter((a) => a.megatopic_id === selectedMega.megatopic_id) : base), [base, selectedMega]);
+  const filtered = useMemoApp(() => (selectedTopic ? inMega.filter((a) => a.topic_id === selectedTopic.topic_id) : inMega), [inMega, selectedTopic]);
 
-  if (!data || !meta) {
-    return <div style={{ padding: 60, fontFamily: "var(--serif)", fontSize: 18, color: "var(--ink-3)" }}>Carregando corpus…</div>;
+  const exportCsv = () => { downloadCsv(filtered, meta.data); notify(t("toast.exported", { n: fmtInt(filtered.length) })); };
+  const exportJson = () => { downloadJson(filtered, meta.data, state); notify(t("toast.exported", { n: fmtInt(filtered.length) })); };
+
+  useEffectApp(() => {
+    if (!commandRef) return;
+    commandRef.current = (cmd) => {
+      if (cmd.type === "level") setLevel(cmd.level);
+      else if (cmd.type === "filter") setFilters((f) => ({ ...f, ...cmd.patch }));
+      else if (cmd.type === "toggle-geo") {
+        const geoMode = filters.geoMode === "context" ? "production" : "context";
+        setFilters((f) => ({ ...f, geoMode }));
+        notify(geoMode === "context" ? t("toast.geoContext") : t("toast.geoProduction"));
+      }
+      else if (cmd.type === "reset") {
+        clearDrill();
+        setFilters(DEFAULT_FILTERS);
+        setLevel("home");
+      }
+      else if (cmd.type === "drill-mega" && data) {
+        setSelectedMega(data.megatopics.find((m) => m.megatopic_id === cmd.mega.megatopic_id) || null);
+        setSelectedTopic(null); setCompareTopic(null); setLevel("meso");
+      }
+      else if (cmd.type === "drill-topic" && data) {
+        const topic = data.topics.find((tp) => tp.topic_id === cmd.topic.topic_id) || null;
+        setSelectedMega(topic ? data.megatopics.find((m) => m.megatopic_id === topic.megatopic_id) || null : null);
+        setSelectedTopic(topic); setCompareTopic(null); setLevel("meso");
+      }
+      else if (cmd.type === "export-csv") exportCsv();
+      else if (cmd.type === "export-json") exportJson();
+      else if (cmd.type === "copy-link") copyViewLink(notify);
+    };
+  });
+
+  if (meta.error || topicsRaw.error || megatopicsRaw.error || articlesRaw.error) {
+    return <div className="app-status" role="alert">{t("app.loadError")}</div>;
+  }
+  if (!data || !meta.data) {
+    return <div className="app-status" role="status">{t("app.loading")}</div>;
   }
 
-  const counts = { articles: fmtInt(meta.n_articles), topics: meta.n_topics, megatopics: meta.n_megatopics };
-  const countryOptions = Array.from(new Set(data.articles.map((a) => a.study_country))).sort();
-  const handlePresetRange = () => setFilters((f) => ({ ...f, yearMin: 2021, yearMax: 2025 }));
-  const handleFocusProduction = () => { setFilters((f) => ({ ...f, geoMode: "production" })); setLevel("micro"); };
-  const handleCompareTopics = () => { setLevel("meso"); setSelectedTopic(null); setCompareTopic(null); };
-  const handleExportCsv = () => downloadFilteredCsv(filtered);
-
-  const isDark = variant === "dark";
+  const corpusSize = data.articles.length;
+  const counts = { articles: fmtInt(corpusSize), topics: data.topics.length, megatopics: data.megatopics.length };
+  const countryOptions = Array.from(new Set(data.articles.flatMap((a) => a.study_countries))).sort();
+  const guideActions = [
+    { id: "recent", label: t("guide.recent"), run: () => setFilters((f) => ({ ...f, yearMin: 2021, yearMax: YEAR_MAX })) },
+    { id: "production", label: t("guide.production"), run: () => { setFilters((f) => ({ ...f, geoMode: "production" })); setLevel("micro"); } },
+    { id: "compare", label: t("guide.compare"), run: () => { setLevel("meso"); setSelectedTopic(null); setCompareTopic(null); } },
+    { id: "csv", label: t("guide.exportCsv"), run: exportCsv },
+    { id: "json", label: t("guide.exportJson"), run: exportJson },
+    { id: "link", label: t("guide.copyLink"), run: () => copyViewLink(notify) },
+  ];
 
   return (
-    <div className="shell shell--no-inspector" data-variant={variant}>
-      <Masthead meta={meta} settings={settings} onSettingsChange={onSettingsChange} />
+    <div className="shell shell--no-inspector">
+      <a className="skip-link" href="#main-content">{t("app.skip")}</a>
+      <Masthead meta={meta.data} settings={settings} onSettingsChange={onSettingsChange} onShowTour={onShowTour} />
       <aside className="sidebar">
         <SidebarSection
-          title="Níveis"
+          title={t("sidebar.levels")}
           count={counts.articles + " · " + counts.topics + " · " + counts.megatopics}
           isOpen={sidebarOpen.levels}
           onToggle={() => setSidebarOpen((s) => ({ ...s, levels: !s.levels }))}
         >
           <LevelNav level={level} setLevel={setLevel} counts={counts}
-                    selectedTopic={selectedTopic} selectedMega={selectedMega}
-                    clearDrill={() => { setSelectedMega(null); setSelectedTopic(null); setCompareTopic(null); }} />
+                    selectedTopic={selectedTopic} selectedMega={selectedMega} clearDrill={clearDrill} />
         </SidebarSection>
         <SidebarSection
-          title="Apparatus"
-          isOpen={sidebarOpen.apparatus}
-          onToggle={() => setSidebarOpen((s) => ({ ...s, apparatus: !s.apparatus }))}
-        >
-          <SidebarApparatus
-            onPresetRange={handlePresetRange}
-            onFocusProduction={handleFocusProduction}
-            onCompareTopics={handleCompareTopics}
-            onExportCsv={handleExportCsv}
-          />
-        </SidebarSection>
-        <SidebarSection
-          title="Filtros"
+          title={t("sidebar.filters")}
           count={filters.yearMin + "–" + filters.yearMax}
           isOpen={sidebarOpen.filters}
           onToggle={() => setSidebarOpen((s) => ({ ...s, filters: !s.filters }))}
         >
           <Filters filters={filters} setFilters={setFilters} options={{ countries: countryOptions }} />
         </SidebarSection>
+        <SidebarSection
+          title={t("sidebar.guide")}
+          isOpen={sidebarOpen.guide}
+          onToggle={() => setSidebarOpen((s) => ({ ...s, guide: !s.guide }))}
+        >
+          <SidebarGuide actions={guideActions} />
+        </SidebarSection>
+        <div className="sidebar-section sidebar-keys">
+          <div className="sidebar-label">{t("sidebar.shortcuts")}</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingRight: 20 }}>
+            <KeyboardRow k="Ctrl/⌘ K" v={t("keys.palette")} />
+            <KeyboardRow k="1 · 2 · 3 · 4" v={t("keys.levels")} />
+            <KeyboardRow k="R" v={t("keys.reset")} />
+            <KeyboardRow k="C" v={t("keys.geo")} />
+          </div>
+        </div>
       </aside>
 
-      <main className="main">
-        <Breadcrumb level={level} setLevel={setLevel} mega={selectedMega} topic={selectedTopic}
-                    onClearMega={() => setSelectedMega(null)} onClearTopic={() => setSelectedTopic(null)} />
-        {level === "home" && <HomePage meta={meta} megatopics={data.megatopics} topics={data.topics} articles={data.articles} filtered={filtered} setLevel={setLevel} />}
+      <main className="main" id="main-content" tabIndex={-1}>
+        <Breadcrumb level={level} setLevel={setLevel} mega={selectedMega} topic={selectedTopic} counts={counts} />
+        {level === "home" && <HomePage meta={meta.data} megatopics={data.megatopics} topics={data.topics} articles={data.articles} setLevel={setLevel} />}
         {level === "search" && <SearchPage filtered={filtered} />}
-        {level === "macro" && <MacroPage megatopics={data.megatopics} filtered={filtered} onSelectMega={(m) => { setSelectedMega(m); }} selectedMega={selectedMega} />}
-        {level === "meso" && <MesoPage topics={data.topics} megatopics={data.megatopics} filtered={filtered}
+        {level === "macro" && <MacroPage megatopics={data.megatopics} filtered={base} corpusSize={corpusSize}
+                                         onSelectMega={(m) => { setSelectedMega(m); setSelectedTopic(null); setCompareTopic(null); setLevel("meso"); }}
+                                         selectedMega={selectedMega} />}
+        {level === "meso" && <MesoPage topics={data.topics} filtered={inMega} corpusSize={corpusSize}
                                        selectedMega={selectedMega}
-                                       onSelectTopic={(t) => setSelectedTopic(t)}
+                                       onSelectTopic={(tp) => { setSelectedTopic(tp); if (!tp) setCompareTopic(null); }}
                                        selectedTopic={selectedTopic}
-                                       compareTopic={compareTopic} setCompareTopic={setCompareTopic} />}
-        {level === "micro" && <MicroPage filtered={filtered} topics={data.topics} megatopics={data.megatopics} dark={isDark} />}
+                                       compareTopic={compareTopic} setCompareTopic={setCompareTopic}
+                                       onOpenMicro={() => setLevel("micro")} />}
+        {level === "micro" && <MicroPage filtered={filtered} corpusSize={corpusSize} filters={filters} setFilters={setFilters} dark={dark} lang={lang} />}
       </main>
-
     </div>
   );
 }
 
 window.HubApp = HubApp;
-window.Inspector = Inspector;
-window.buildSampleArticles = buildSampleArticles;
-window.enrichData = enrichData;

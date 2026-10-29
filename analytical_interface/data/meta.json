@@ -1,15 +1,15 @@
 {
-  "version": "v1.1.1",
-  "date": "2026-04-30",
+  "version": "v2.0.0",
+  "date": "2026-08-26",
   "source_hash": {
-    "articles_dataset_csv_md5": "012589bf9c1f1882d8b0d652fa714488",
-    "topics_dataset_csv_md5": "ff2ddcdefadb6c6cc3c175c49cebf7e5",
-    "megatopics_dataset_csv_md5": "df3703d2e132c393074ad0fdad986377"
+    "articles_dataset_csv_md5": "ab6dea559fef9cd80f74b76100e9edf6",
+    "topics_dataset_csv_md5": "e2d9a2dce0cb88397d8c06f4642df5e8",
+    "megatopics_dataset_csv_md5": "583e971371829075ab69d49c048675c4"
   },
-  "articles_rows": 580,
-  "topics_rows": 32,
-  "megatopics_rows": 7,
   "n_articles": 580,
+  "n_columns": 54,
   "n_topics": 32,
-  "n_megatopics": 7
+  "n_megatopics": 7,
+  "year_min": 2012,
+  "year_max": 2025
 }

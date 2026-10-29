@@ -1,111 +1,116 @@
-/* global React */
-const { useState: useState2, useMemo: useMemo2 } = React;
+/* global React, t */
+const { useState: useState2, useMemo: useMemo2, useCallback: useCallback2 } = React;
+
+function doiUrl(doiRaw) {
+  const doi = String(doiRaw || "").trim().replace(/^https?:\/\/(dx\.)?doi\.org\//i, "").replace(/^doi:\s*/i, "").trim();
+  return doi ? `https://doi.org/${doi}` : "";
+}
+
+function ArticleTitle({ a }) {
+  const href = doiUrl(a.doi);
+  if (!href) return <span title={t("micro.noDoi")}>{a.title}</span>;
+  return <a className="title-link" href={href} target="_blank" rel="noopener noreferrer" title={t("micro.openDoi") + ": " + a.doi}>{a.title}</a>;
+}
+
+function FlowChip({ flow }) {
+  const color = FLOW_COLORS[flow] || FLOW_COLORS[""];
+  return <span className="chip chip-static" style={{ background: color + "26", borderColor: color }}>{flowLabel(flow)}</span>;
+}
+
+function countryList(codes, max = 3) {
+  const list = codes || [];
+  if (list.length <= max) return list.join(" · ");
+  return list.slice(0, max).join(" · ") + ` +${list.length - max}`;
+}
 
 // ============ MESO ============
-function MesoPage({ topics, megatopics, filtered, selectedMega, onSelectTopic, selectedTopic, compareTopic, setCompareTopic }) {
-  const byTopic = {};
-  filtered.forEach((a) => { byTopic[a.topic_id] = (byTopic[a.topic_id] || 0) + 1; });
-  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
-  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
-  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
-  let rows = topics.map((t) => ({
-    ...t,
-    filtered_count: byTopic[t.topic_id] || 0,
-  }));
+// `filtered` here does NOT include the selected topic: choosing topic A must not hide the other topics.
+function MesoPage({ topics, filtered, corpusSize, selectedMega, onSelectTopic, selectedTopic, compareTopic, setCompareTopic, onOpenMicro }) {
+  const byTopic = groupStats(filtered, "topic_id");
+  let rows = topics.map((tp) => {
+    const g = byTopic[tp.topic_id] || { n: 0, n_countries: 0 };
+    return { ...tp, filtered_count: g.n, n_countries_selection: g.n_countries };
+  });
   if (selectedMega) rows = rows.filter((r) => r.megatopic_id === selectedMega.megatopic_id);
   rows = rows.sort((a, b) => b.filtered_count - a.filtered_count);
+  const pick = (r) => onSelectTopic(selectedTopic?.topic_id === r.topic_id ? null : r);
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">Nível Meso · 32 tópicos {selectedMega ? `· filtro em “${selectedMega.megatopic_description}”` : ""}</div>
-          <h1>Tópicos, lado a lado.</h1>
-          <p className="page-dek">Selecione um tópico para abrir sua ficha. Selecione um segundo para comparar — volume, coerência (Cv), crescimento e distribuição de fluxos aparecem em paralelo.</p>
+          <div className="page-kicker">{t("meso.kicker", { n: rows.length })}{selectedMega ? t("meso.kickerMega", { mega: selectedMega.megatopic_description }) : ""}</div>
+          <h1>{t("meso.title")}</h1>
+          <p className="page-dek">{t("meso.dek")}</p>
         </div>
         <div className="page-stamp">
-          <strong>NA SELEÇÃO</strong><br/>
-          {rows.length} tópicos<br/>
-          {fmtInt(rows.reduce((s, r) => s + r.filtered_count, 0))} artigos<br/>
+          <strong>{t("macro.inSelection")}</strong><br/>
+          {t("home.topics", { n: rows.length })}<br/>
+          {t("unit.articles", { n: fmtInt(rows.reduce((s, r) => s + r.filtered_count, 0)) })}<br/>
           <br/>
-          <strong>COMPARAR</strong><br/>
+          <strong>{t("meso.compare")}</strong><br/>
           {selectedTopic ? "A: T" + selectedTopic.topic_id : "—"}<br/>
           {compareTopic ? "B: T" + compareTopic.topic_id : "—"}
         </div>
       </div>
-      <KpiStrip
-        articles={filtered}
-        totalArticles={filtered.length}
-        totalCountries={totalCountries}
-        totalJournals={totalJournals}
-        totalCross={totalCross}
-      />
+      <KpiStrip articles={filtered} corpusSize={corpusSize} />
 
-      <div className="section-head">
-        <div className="section-num">§ 01</div>
-        <h2>Constelação dos tópicos</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{rows.length} tópicos</div>
-      </div>
+      <SectionHead num="01" title={t("meso.star")} aside={t("home.topics", { n: rows.length })} />
       <div className="module">
-        <div className="module-note" style={{ marginTop: 0 }}>
-          Cada ponto representa um tópico. Quanto maior o ponto, maior o volume de artigos no recorte; a distância ao centro representa predominância relativa. Clique em um ponto para abrir a ficha do tópico.
-        </div>
-        <TopicStarChart rows={rows} selectedTopic={selectedTopic} compareTopic={compareTopic} onSelectTopic={onSelectTopic} />
+        <div className="module-note" style={{ marginTop: 0 }}>{t("meso.starNote")}</div>
+        <TopicStarChart rows={rows} selectedTopic={selectedTopic} compareTopic={compareTopic} onSelectTopic={pick} />
       </div>
 
-      <div className="section-head">
-        <div className="section-num">§ 02</div>
-        <h2>Ranking sinóptico</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>tabela de apoio</div>
+      <SectionHead num="02" title={t("meso.ranking")} aside={t("meso.rankingHint")} />
+      <div className="table-wrap">
+        <table className="ed">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">{t("col.topic")}</th>
+              <th scope="col">{t("macro.colMega")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.articles")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.cv")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.growth")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.countries")}</th>
+              <th scope="col">{t("col.series")} {YEAR_MIN}–{YEAR_MAX}</th>
+              <th scope="col" style={{ width: 80 }}>{t("col.compare")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => {
+              const isA = selectedTopic?.topic_id === r.topic_id;
+              const isB = compareTopic?.topic_id === r.topic_id;
+              return (
+                <tr key={r.topic_id} className={isA || isB ? "selected" : ""}>
+                  <td className="num">{String(i + 1).padStart(2, "0")}</td>
+                  <td className="title"><button type="button" className="link-btn" aria-pressed={isA} onClick={() => pick(r)}>{r.topic_description}</button></td>
+                  <td style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)" }}>M{r.megatopic_id}</td>
+                  <td className="num" style={{ textAlign: "right" }}>{fmtInt(r.filtered_count)}</td>
+                  <td className="num" style={{ textAlign: "right" }}>{fmtDec(r.coherence_cv)}</td>
+                  <td className="num" title={growthTip(r.growth_prev, r.growth_last)}
+                      style={{ textAlign: "right", color: r.growth_rate_5yr > 0 ? "var(--positive)" : r.growth_rate_5yr < 0 ? "var(--crimson)" : "var(--ink-3)" }}>
+                    {fmtGrowth(r.growth_rate_5yr, r.growth_prev, r.growth_last)}
+                  </td>
+                  <td className="num" style={{ textAlign: "right" }}>{r.n_countries_selection}</td>
+                  <td><Sparkline values={r.yearly_series || []} /></td>
+                  <td>
+                    {isA
+                      ? <span className="btn-ed" style={{ fontSize: 10 }}>A</span>
+                      : <button type="button" className="btn-ed" style={{ fontSize: 10 }} aria-pressed={isB}
+                                onClick={() => setCompareTopic(isB ? null : r)}>{isB ? "B ✕" : "+ B"}</button>}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-      <table className="ed">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Tópico</th>
-            <th>Megatópico</th>
-            <th style={{ textAlign: "right" }}>Artigos ⌀</th>
-            <th style={{ textAlign: "right" }}>Cv</th>
-            <th style={{ textAlign: "right" }}>Cresc. 5a</th>
-            <th style={{ textAlign: "right" }}>Países</th>
-            <th>Série</th>
-            <th style={{ width: 80 }}>Comparar</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => {
-            const isA = selectedTopic?.topic_id === r.topic_id;
-            const isB = compareTopic?.topic_id === r.topic_id;
-            return (
-              <tr key={r.topic_id} className={isA || isB ? "selected" : ""} onClick={() => onSelectTopic(r)}>
-                <td className="num">{String(i + 1).padStart(2, "0")}</td>
-                <td className="title">{r.topic_description}</td>
-                <td style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)" }}>M{r.megatopic_id}</td>
-                <td className="num" style={{ textAlign: "right" }}>{fmtInt(r.filtered_count)}</td>
-                <td className="num" style={{ textAlign: "right" }}>{r.coherence_cv.toFixed(3)}</td>
-                <td className="num" style={{ textAlign: "right", color: r.growth_rate_5yr > 0 ? "var(--positive)" : "var(--crimson)" }}>
-                  {(r.growth_rate_5yr * 100).toFixed(0)}%
-                </td>
-                <td className="num" style={{ textAlign: "right" }}>{r.n_countries}</td>
-                <td><Sparkline values={r.yearly_series || []} /></td>
-                <td onClick={(e) => { e.stopPropagation(); setCompareTopic(isB ? null : r); }}>
-                  <button className="btn-ed" style={{ fontSize: 10 }}>{isA ? "A" : isB ? "B ✕" : "+ B"}</button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
 
       {selectedTopic && (
         <div>
-          <div className="section-head">
-            <div className="section-num">§ 03</div>
-            <h2>{compareTopic ? "Comparação A / B" : "Ficha do tópico"}</h2>
-            <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
-              {compareTopic ? "T" + selectedTopic.topic_id + " × T" + compareTopic.topic_id : "T" + selectedTopic.topic_id}
-            </div>
-          </div>
+          <SectionHead num="03" title={compareTopic ? t("meso.ab") : t("meso.card")}
+                       aside={compareTopic ? "T" + selectedTopic.topic_id + " × T" + compareTopic.topic_id : "T" + selectedTopic.topic_id} />
           <div className="col-12">
             <div className={compareTopic ? "col-span-6 module" : "col-span-12 module"}>
               <TopicCard t={selectedTopic} label="A" />
@@ -116,46 +121,50 @@ function MesoPage({ topics, megatopics, filtered, selectedMega, onSelectTopic, s
               </div>
             )}
           </div>
+          <button type="button" className="btn-ed primary" style={{ marginTop: 16 }} onClick={onOpenMicro}>{t("meso.toMicro")}</button>
         </div>
       )}
     </div>
   );
 }
 
-function TopicCard({ t, label }) {
-  const yearData = (t.yearly_series || []).map((v, i) => ({ year: 2000 + i, count: v }));
+function TopicCard({ t: tp, label }) {
+  const yearData = (tp.yearly_series || []).map((v, i) => ({ year: YEAR_MIN + i, count: v }));
   return (
     <div>
       <div className="module-head">
         <div>
-          <div className="module-title">{label} · T{t.topic_id}</div>
-          <div className="module-sub">{t.topic_description}</div>
+          <div className="module-title">{label} · T{tp.topic_id}</div>
+          <div className="module-sub">{tp.topic_description}</div>
         </div>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)" }}>M{t.megatopic_id}</div>
+        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)" }}>M{tp.megatopic_id}</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, padding: "12px 0", borderBottom: "1px solid var(--rule)" }}>
-        <Metric label="Artigos" value={fmtInt(t.article_count)} />
-        <Metric label="Cv" value={t.coherence_cv.toFixed(3)} />
-        <Metric label="Cresc. 5a" value={(t.growth_rate_5yr * 100).toFixed(0) + "%"} pos={t.growth_rate_5yr > 0} />
-        <Metric label="Países" value={t.n_countries} />
+      <div className="metric-grid">
+        <Metric label={t("col.articles")} value={fmtInt(tp.article_count)} />
+        <Metric label={t("col.cv")} value={fmtDec(tp.coherence_cv)} />
+        <Metric label={t("col.growth")} value={fmtGrowth(tp.growth_rate_5yr, tp.growth_prev, tp.growth_last)}
+                pos={Number.isFinite(tp.growth_rate_5yr) ? tp.growth_rate_5yr > 0 : undefined}
+                note={growthTip(tp.growth_prev, tp.growth_last)} />
+        <Metric label={t("col.countries")} value={tp.n_countries} />
       </div>
       <div style={{ padding: "12px 0" }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 6 }}>Série 2000–2024</div>
-        <YearSeries data={yearData} width={360} height={140} />
+        <div className="mini-label">{t("meso.series", { a: YEAR_MIN, b: YEAR_MAX })}</div>
+        <YearSeries data={yearData} width={360} height={140} label={t("meso.series", { a: YEAR_MIN, b: YEAR_MAX })} />
       </div>
       <div style={{ padding: "12px 0", borderTop: "1px solid var(--rule)" }}>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Distribuição de fluxos</div>
-        <FlowStack dist={t.flow_distribution || []} />
+        <div className="mini-label">{t("meso.flows")}</div>
+        <FlowStack dist={tp.flow_distribution || []} />
       </div>
     </div>
   );
 }
 
-function Metric({ label, value, pos }) {
+function Metric({ label, value, pos, note }) {
   return (
-    <div>
-      <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.12em", textTransform: "uppercase" }}>{label}</div>
-      <div style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 400, color: pos === undefined ? "var(--ink-1)" : pos ? "var(--positive)" : "var(--crimson)", lineHeight: 1 }}>{value}</div>
+    <div title={note || undefined}>
+      <div className="mini-label" style={{ marginBottom: 2 }}>{label}</div>
+      <div style={{ fontFamily: "var(--serif)", fontSize: 28, fontWeight: 400, color: pos === undefined ? "var(--ink)" : pos ? "var(--positive)" : "var(--crimson)", lineHeight: 1 }}>{value}</div>
+      {note && <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", marginTop: 4 }}>{note}</div>}
     </div>
   );
 }
@@ -172,19 +181,12 @@ function TopicStarChart({ rows, selectedTopic, compareTopic, onSelectTopic }) {
     const angle = (-Math.PI / 2) + (i / Math.max(1, rows.length)) * Math.PI * 2;
     const intensity = r.filtered_count / maxCount;
     const radius = rMin + intensity * (rMax - rMin);
-    return {
-      ...r,
-      x: cx + Math.cos(angle) * radius,
-      y: cy + Math.sin(angle) * radius,
-      angle,
-      dot: 4 + intensity * 10,
-      intensity,
-    };
+    return { ...r, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius, dot: 4 + intensity * 10 };
   });
 
   return (
     <div className="topic-star-wrap">
-      <svg className="topic-star-chart" viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Gráfico estrela dos tópicos">
+      <svg className="topic-star-chart" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={t("meso.starNote")}>
         {[0.25, 0.5, 0.75, 1].map((k) => (
           <circle key={k} cx={cx} cy={cy} r={rMin + (rMax - rMin) * k} fill="none" stroke="var(--rule)" strokeDasharray="3 5" />
         ))}
@@ -197,6 +199,7 @@ function TopicStarChart({ rows, selectedTopic, compareTopic, onSelectTopic }) {
           const isB = compareTopic?.topic_id === p.topic_id;
           return (
             <g key={p.topic_id} onClick={() => onSelectTopic(p)} style={{ cursor: "pointer" }}>
+              <title>{`T${p.topic_id} · ${p.topic_description}: ${p.filtered_count}`}</title>
               <circle
                 cx={p.x}
                 cy={p.y}
@@ -216,25 +219,20 @@ function TopicStarChart({ rows, selectedTopic, compareTopic, onSelectTopic }) {
         })}
 
         <circle cx={cx} cy={cy} r="38" fill="var(--paper-2)" stroke="var(--rule-strong)" />
-        <text x={cx} y={cy - 3} textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-4)" style={{ letterSpacing: "0.08em" }}>
-          MESO
-        </text>
-        <text x={cx} y={cy + 12} textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-3)">
-          {rows.length} tópicos
-        </text>
+        <text x={cx} y={cy - 3} textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-4)" style={{ letterSpacing: "0.08em" }}>MESO</text>
+        <text x={cx} y={cy + 12} textAnchor="middle" fontFamily="var(--mono)" fontSize="10" fill="var(--ink-3)">{t("home.topics", { n: rows.length })}</text>
       </svg>
     </div>
   );
 }
 
 // ============ MICRO ============
-function MicroPage({ filtered, topics, megatopics, dark }) {
-  const [mapMode, setMapMode] = useState2("context");
-  const [yearRange, setYearRange] = useState2(null);
+const MICRO_PAGE = 80;
+
+function MicroPage({ filtered, corpusSize, filters, setFilters, dark, lang }) {
   const [sortKey, setSortKey] = useState2("year");
-  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
-  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
-  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
+  const [shown, setShown] = useState2(MICRO_PAGE);
+  const mapMode = filters.geoMode;
   const yearCounts = {};
   filtered.forEach((a) => { yearCounts[a.year] = (yearCounts[a.year] || 0) + 1; });
   const yearData = Object.keys(yearCounts).map((y) => ({ year: +y, count: yearCounts[y] })).sort((a, b) => a.year - b.year);
@@ -243,55 +241,46 @@ function MicroPage({ filtered, topics, megatopics, dark }) {
   filtered.forEach((a) => { flowDist[a.flow] = (flowDist[a.flow] || 0) + 1; });
   const flowArr = Object.keys(flowDist).map((k) => ({ label: k, value: flowDist[k] })).sort((a, b) => b.value - a.value);
 
-  const sorted = [...filtered].sort((a, b) => {
-    if (sortKey === "year") return b.year - a.year;
-    if (sortKey === "country") return (a.study_country || "").localeCompare(b.study_country || "");
-    return 0;
-  });
+  const sorted = useMemo2(() => [...filtered].sort((a, b) => {
+    if (sortKey === "country") return (a.study_countries[0] || "").localeCompare(b.study_countries[0] || "") || b.year - a.year;
+    return b.year - a.year || a.id - b.id;
+  }), [filtered, sortKey]);
 
-  const openDoi = (doiRaw) => {
-    const doi = String(doiRaw || "").trim();
-    if (!doi) return;
-    const normalized = doi.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "").trim();
-    if (!normalized) return;
-    window.open(`https://doi.org/${encodeURIComponent(normalized)}`, "_blank", "noopener,noreferrer");
-  };
+  const onCountryClick = useCallback2((code) => {
+    if (mapMode === "context") setFilters((f) => ({ ...f, country: f.country === code ? "" : code }));
+  }, [mapMode, setFilters]);
+  const setMapMode = (mode) => setFilters((f) => ({ ...f, geoMode: mode }));
+  const years = filtered.map((a) => a.year);
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">Nível Micro · {fmtInt(filtered.length)} artigos no recorte</div>
-          <h1>Evidências, uma por uma.</h1>
-          <p className="page-dek">Mapas, série temporal e distribuição de fluxos se coordenam com a tabela abaixo. Todo clique aqui é também um filtro — selecione um país, um ano ou um fluxo para restringir o recorte.</p>
+          <div className="page-kicker">{t("micro.kicker", { n: fmtInt(filtered.length) })}</div>
+          <h1>{t("micro.title")}</h1>
+          <p className="page-dek">{t("micro.dek")}</p>
         </div>
         <div className="page-stamp">
-          <strong>RECORTE</strong><br/>
-          {fmtInt(filtered.length)} artigos<br/>
-          {new Set(filtered.map(a => a.topic_id)).size} tópicos<br/>
-          {new Set(filtered.map(a => a.study_country)).size} países<br/>
-          {filtered.length ? (Math.min(...filtered.map(a => a.year)) + "–" + Math.max(...filtered.map(a => a.year))) : "—"}
+          <strong>{t("micro.stamp")}</strong><br/>
+          {t("unit.articles", { n: fmtInt(filtered.length) })}<br/>
+          {t("micro.stampTopics", { n: new Set(filtered.map((a) => a.topic_id)).size })}<br/>
+          {t("micro.stampCountries", { n: uniqueCount(filtered, "study_countries") })}<br/>
+          {years.length ? (Math.min(...years) + "–" + Math.max(...years)) : "—"}
         </div>
       </div>
-      <KpiStrip
-        articles={filtered}
-        totalArticles={filtered.length}
-        totalCountries={totalCountries}
-        totalJournals={totalJournals}
-        totalCross={totalCross}
-      />
+      <KpiStrip articles={filtered} corpusSize={corpusSize} />
+
+      {filtered.length === 0 && <div className="empty-state" role="status">{t("micro.empty")}</div>}
 
       <div className="section-head">
         <div className="section-num">§ 01</div>
-        <h2>Cartografia dupla</h2>
-        <div style={{ display: "flex", gap: 0, border: "1px solid var(--rule-strong)" }}>
-          <button className="btn-ed" onClick={() => setMapMode("context")}
-                  style={{ border: "none", background: mapMode === "context" ? "var(--ink-1)" : "transparent", color: mapMode === "context" ? "var(--paper)" : "var(--ink-2)" }}>
-            Contexto empírico
+        <h2>{t("micro.maps")}</h2>
+        <div className="segmented" role="group" aria-label={t("filters.geoMode")}>
+          <button type="button" className={"btn-ed" + (mapMode === "context" ? " is-on" : "")} aria-pressed={mapMode === "context"} onClick={() => setMapMode("context")}>
+            {t("micro.mapContext")}
           </button>
-          <button className="btn-ed" onClick={() => setMapMode("production")}
-                  style={{ border: "none", borderLeft: "1px solid var(--rule-strong)", background: mapMode === "production" ? "var(--ink-1)" : "transparent", color: mapMode === "production" ? "var(--paper)" : "var(--ink-2)" }}>
-            Produção científica
+          <button type="button" className={"btn-ed" + (mapMode === "production" ? " is-on" : "")} aria-pressed={mapMode === "production"} onClick={() => setMapMode("production")}>
+            {t("micro.mapProduction")}
           </button>
         </div>
       </div>
@@ -299,66 +288,67 @@ function MicroPage({ filtered, topics, megatopics, dark }) {
       <div className="col-12">
         <div className="col-span-8 module" style={{ padding: 0, overflow: "hidden" }}>
           <div style={{ padding: "12px 16px", borderBottom: "1px solid var(--rule)" }}>
-            <div className="module-title">{mapMode === "context" ? "Onde o fenômeno é estudado" : "Onde o conhecimento é produzido"}</div>
-            <div className="module-sub">{mapMode === "context" ? "país do estudo empírico" : "país da filiação institucional dos autores"}</div>
+            <div className="module-title">{mapMode === "context" ? t("micro.mapContextTitle") : t("micro.mapProductionTitle")}</div>
+            <div className="module-sub">{mapMode === "context" ? t("micro.mapContextSub") : t("micro.mapProductionSub")}</div>
           </div>
-          <WorldMap points={filtered} mode={mapMode} dark={dark} />
+          <WorldMap points={filtered} mode={mapMode} dark={dark} lang={lang} onCountryClick={onCountryClick} />
         </div>
         <div className="col-span-4">
           <div className="module">
-            <div className="module-head"><div><div className="module-title">Série temporal</div><div className="module-sub">artigos por ano</div></div></div>
-            <YearSeries data={yearData} width={320} height={160} />
+            <div className="module-head"><div><div className="module-title">{t("micro.series")}</div><div className="module-sub">{t("micro.seriesSub")}</div></div></div>
+            <YearSeries data={yearData} width={320} height={160} label={t("micro.seriesSub")}
+                        onYearClick={(y) => setFilters((f) => ({ ...f, yearMin: y, yearMax: y }))} />
           </div>
           <div className="module" style={{ marginTop: 16 }}>
-            <div className="module-head"><div><div className="module-title">Fluxo editorial</div><div className="module-sub">distribuição no recorte</div></div></div>
-            <FlowStack dist={flowArr} />
+            <div className="module-head"><div><div className="module-title">{t("micro.flow")}</div><div className="module-sub">{t("micro.flowSub")}</div></div></div>
+            <FlowStack dist={flowArr} onFlowClick={(fl) => setFilters((f) => ({ ...f, flow: f.flow === fl ? "" : fl }))} />
           </div>
         </div>
       </div>
 
       <div className="section-head">
         <div className="section-num">§ 02</div>
-        <h2>Artigos · {fmtInt(sorted.length)}</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
-          ordenar:&nbsp;
-          <button className="btn-ed" style={{ fontSize: 10, marginRight: 4 }} onClick={() => setSortKey("year")}>{sortKey === "year" ? "●" : "○"} ano</button>
-          <button className="btn-ed" style={{ fontSize: 10 }} onClick={() => setSortKey("country")}>{sortKey === "country" ? "●" : "○"} país</button>
+        <h2>{t("micro.articles", { n: fmtInt(sorted.length) })}</h2>
+        <div className="section-aside">
+          {t("micro.sort")}&nbsp;
+          <button type="button" className="btn-ed" style={{ fontSize: 10, marginRight: 4 }} aria-pressed={sortKey === "year"} onClick={() => setSortKey("year")}>{sortKey === "year" ? "●" : "○"} {t("micro.sortYear")}</button>
+          <button type="button" className="btn-ed" style={{ fontSize: 10 }} aria-pressed={sortKey === "country"} onClick={() => setSortKey("country")}>{sortKey === "country" ? "●" : "○"} {t("micro.sortCountry")}</button>
         </div>
       </div>
 
-      <table className="ed">
-        <thead>
-          <tr>
-            <th>Ano</th>
-            <th>Título</th>
-            <th>Periódico</th>
-            <th>Contexto</th>
-            <th>Produção</th>
-            <th>Fluxo</th>
-            <th>Tópico</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sorted.slice(0, 80).map((a) => (
-            <tr
-              key={a.id}
-              onClick={() => openDoi(a.doi)}
-              style={{ cursor: a.doi ? "pointer" : "default" }}
-              title={a.doi ? `Abrir DOI: ${a.doi}` : "DOI indisponível"}
-            >
-              <td className="num">{a.year}</td>
-              <td className="title">{a.title}</td>
-              <td style={{ fontStyle: "italic", color: "var(--ink-3)", fontSize: 12 }}>{a.journal}</td>
-              <td className="num">{a.study_country}</td>
-              <td className="num">{a.researcher_country}</td>
-              <td><span className="chip" style={{ background: FLOW_COLORS[a.flow] + "22", borderColor: FLOW_COLORS[a.flow] + "88" }}>{a.flow}</span></td>
-              <td style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)" }}>T{a.topic_id}</td>
+      <div className="table-wrap">
+        <table className="ed">
+          <thead>
+            <tr>
+              <th scope="col">{t("col.year")}</th>
+              <th scope="col">{t("col.title")}</th>
+              <th scope="col">{t("col.journal")}</th>
+              <th scope="col">{t("col.context")}</th>
+              <th scope="col">{t("col.production")}</th>
+              <th scope="col">{t("col.flow")}</th>
+              <th scope="col">{t("col.topic")}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {sorted.length > 80 && (
-        <div className="footnote">exibindo 80 de {fmtInt(sorted.length)} · refine com filtros acima</div>
+          </thead>
+          <tbody>
+            {sorted.slice(0, shown).map((a) => (
+              <tr key={a.id}>
+                <td className="num">{a.year}</td>
+                <td className="title"><ArticleTitle a={a} /></td>
+                <td style={{ fontStyle: "italic", color: "var(--ink-3)", fontSize: 12 }}>{a.journal}</td>
+                <td className="num" title={a.study_countries.join(", ")}>{countryList(a.study_countries)}</td>
+                <td className="num" title={a.researcher_countries.join(", ")}>{countryList(a.researcher_countries)}</td>
+                <td><FlowChip flow={a.flow} /></td>
+                <td style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)" }}>T{a.topic_id}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {sorted.length > shown && (
+        <div className="footnote" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <span>{t("micro.showing", { shown: fmtInt(shown), n: fmtInt(sorted.length) })}</span>
+          <button type="button" className="btn-ed" onClick={() => setShown((s) => s + MICRO_PAGE)}>+ {MICRO_PAGE}</button>
+        </div>
       )}
     </div>
   );
@@ -377,44 +367,37 @@ function SearchPage({ filtered }) {
         a.authors,
         a.journal,
         a.doi,
-        a.study_country,
-        a.researcher_country,
+        a.study_countries.join(" "),
+        a.researcher_countries.join(" "),
         a.flow,
+        flowLabel(a.flow),
       ].join(" ").toLowerCase();
       return blob.includes(q);
     });
   }, [filtered, q]);
 
-  const openDoi = (doiRaw) => {
-    const doi = String(doiRaw || "").trim();
-    if (!doi) return;
-    const normalized = doi.replace(/^https?:\/\/(dx\.)?doi\.org\//i, "").trim();
-    if (!normalized) return;
-    window.open(`https://doi.org/${encodeURIComponent(normalized)}`, "_blank", "noopener,noreferrer");
-  };
-
   return (
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">Nível Busca · escrita livre</div>
-          <h1>Encontre artigos por termo.</h1>
-          <p className="page-dek">Digite qualquer termo (ex.: police) para buscar em título, palavras-chave, autores, periódico, DOI e campos contextuais.</p>
+          <div className="page-kicker">{t("search.kicker")}</div>
+          <h1>{t("search.title")}</h1>
+          <p className="page-dek">{t("search.dek")}</p>
         </div>
         <div className="page-stamp">
-          <strong>RECORTE BASE</strong><br/>
-          {fmtInt(filtered.length)} artigos<br/>
-          filtros da sidebar ativos
+          <strong>{t("search.base")}</strong><br/>
+          {t("unit.articles", { n: fmtInt(filtered.length) })}<br/>
+          {t("search.baseNote")}
         </div>
       </div>
 
       <div className="module" style={{ paddingTop: 16 }}>
-        <div className="sidebar-subhead" style={{ marginBottom: 10 }}><span>Campo de busca</span></div>
         <div className="filter-row">
-          <label>Digite seu termo abaixo</label>
+          <label htmlFor="search-input">{t("search.label")}</label>
           <input
-            type="text"
-            placeholder="Escreva aqui... Ex.: police, trafficking, Brazil, domestic"
+            id="search-input"
+            type="search"
+            placeholder={t("search.placeholder")}
             value={query}
             autoFocus
             onChange={(e) => setQuery(e.target.value)}
@@ -424,42 +407,42 @@ function SearchPage({ filtered }) {
 
       <div className="section-head">
         <div className="section-num">§ 01</div>
-        <h2>Resultados · {fmtInt(matches.length)}</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>
-          {q ? `termo: "${q}"` : "digite para iniciar"}
-        </div>
+        <h2 aria-live="polite">{t("search.results", { n: fmtInt(matches.length) })}</h2>
+        <div className="section-aside">{q ? t("search.term", { q }) : t("search.typeToStart")}</div>
       </div>
 
       {q ? (
-        <table className="ed">
-          <thead>
-            <tr>
-              <th>Ano</th>
-              <th>Título</th>
-              <th>Periódico</th>
-              <th>Keywords</th>
-              <th>Contexto</th>
-              <th>Fluxo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {matches.slice(0, 120).map((a) => (
-              <tr key={a.id} onClick={() => openDoi(a.doi)} style={{ cursor: a.doi ? "pointer" : "default" }}>
-                <td className="num">{a.year}</td>
-                <td className="title">{a.title}</td>
-                <td style={{ fontStyle: "italic", color: "var(--ink-3)", fontSize: 12 }}>{a.journal}</td>
-                <td style={{ fontSize: 12, color: "var(--ink-3)" }}>{(a.keywords || "-").slice(0, 140)}</td>
-                <td className="num">{a.study_country}</td>
-                <td><span className="chip" style={{ background: FLOW_COLORS[a.flow] + "22", borderColor: FLOW_COLORS[a.flow] + "88" }}>{a.flow}</span></td>
+        <div className="table-wrap">
+          <table className="ed">
+            <thead>
+              <tr>
+                <th scope="col">{t("col.year")}</th>
+                <th scope="col">{t("col.title")}</th>
+                <th scope="col">{t("col.journal")}</th>
+                <th scope="col">{t("col.keywords")}</th>
+                <th scope="col">{t("col.context")}</th>
+                <th scope="col">{t("col.flow")}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {matches.slice(0, 120).map((a) => (
+                <tr key={a.id}>
+                  <td className="num">{a.year}</td>
+                  <td className="title"><ArticleTitle a={a} /></td>
+                  <td style={{ fontStyle: "italic", color: "var(--ink-3)", fontSize: 12 }}>{a.journal}</td>
+                  <td style={{ fontSize: 12, color: "var(--ink-3)" }}>{(a.keywords || "-").slice(0, 140)}</td>
+                  <td className="num" title={a.study_countries.join(", ")}>{countryList(a.study_countries)}</td>
+                  <td><FlowChip flow={a.flow} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
-        <div className="footnote">Digite um termo para ver resultados.</div>
+        <div className="footnote">{t("search.empty")}</div>
       )}
       {q && matches.length > 120 && (
-        <div className="footnote">exibindo 120 de {fmtInt(matches.length)} resultados</div>
+        <div className="footnote">{t("search.showing", { shown: 120, n: fmtInt(matches.length) })}</div>
       )}
     </div>
   );

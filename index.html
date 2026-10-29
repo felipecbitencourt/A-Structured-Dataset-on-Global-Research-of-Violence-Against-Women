@@ -1,172 +1,60 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <base href="./analytical_interface/" />
-<title>Hub de Análise — Protótipo Interativo</title>
+<title>Scientific Analysis Hub · Violence against women</title>
+<meta name="description" content="Interactive exploration of a structured dataset of 580 articles on global research on violence against women: topics, megatopics, study countries and research flows, with downloadable selections." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/open-dyslexic@1.0.3/open-dyslexic-regular.css" />
 <link rel="stylesheet" href="styles.css" />
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://cdn.plot.ly/plotly-geo-2.35.2.min.js" integrity="sha384-DmJKZWkm1LpUBdTdXGaLyycadGEvbnP2mDJsDNioDQw1uAWC6HVD/8rjaZqeF6X2" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-<style>
-  /* Prototype-only chrome */
-  body { background: var(--paper); }
-  #proto-root { min-height: 100vh; }
-  /* Status bar */
-  .proto-statusbar {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    height: 28px;
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    align-items: center;
-    padding: 0 16px;
-    background: var(--ink);
-    color: var(--paper);
-    font-family: var(--mono);
-    font-size: 10px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    z-index: 50;
-    gap: 16px;
-  }
-  .proto-statusbar .status-left { display: flex; gap: 16px; align-items: center; opacity: 0.85; }
-  .proto-statusbar .status-center { display: flex; gap: 12px; align-items: center; }
-  .proto-statusbar .status-right { display: flex; gap: 16px; align-items: center; justify-content: flex-end; opacity: 0.85; }
-  .proto-statusbar .live-dot { width: 6px; height: 6px; border-radius: 50%; background: oklch(0.72 0.15 140); display: inline-block; margin-right: 6px; animation: pulse 2.4s infinite; }
-  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
-  /* Account for status bar */
-  .shell { padding-bottom: 28px; }
-  .inspector { max-height: calc(100vh - 60px - 28px) !important; }
-
-  /* Onboarding overlay */
-  .onboard-overlay {
-    position: fixed; inset: 0;
-    background: linear-gradient(180deg, rgba(20,23,27,0.4), rgba(20,23,27,0.55));
-    z-index: 800;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(2px);
-  }
-  .onboard-card {
-    background: var(--paper);
-    width: min(720px, 92vw);
-    border: 1px solid var(--ink);
-    box-shadow: 0 30px 80px rgba(0,0,0,0.35);
-    display: grid;
-    grid-template-columns: 220px 1fr;
-  }
-  .onboard-side {
-    background: var(--paper-2);
-    padding: 28px 24px;
-    border-right: 1px solid var(--rule);
-    display: flex; flex-direction: column; gap: 6px;
-  }
-  .onboard-side .vol { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--ink-4); }
-  .onboard-side .title { font-family: var(--serif); font-size: 28px; line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); margin-top: 18px; }
-  .onboard-side .stamp { margin-top: auto; font-family: var(--mono); font-size: 10px; color: var(--ink-4); letter-spacing: 0.06em; line-height: 1.7; }
-  .onboard-side .stamp strong { color: var(--ink-2); font-weight: 500; }
-  .onboard-body { padding: 28px 28px 22px; }
-  .onboard-body h2 { font-family: var(--serif); font-size: 18px; font-weight: 500; margin-bottom: 8px; }
-  .onboard-body p { font-family: var(--serif); font-size: 14px; line-height: 1.55; color: var(--ink-2); margin: 0 0 14px; }
-  .onboard-steps { display: flex; flex-direction: column; gap: 10px; margin: 18px 0 22px; }
-  .onboard-step { display: grid; grid-template-columns: 28px 1fr; gap: 10px; align-items: baseline; }
-  .onboard-step .num { font-family: var(--mono); font-size: 11px; color: var(--ink-4); letter-spacing: 0.1em; }
-  .onboard-step .lbl { font-family: var(--sans); font-size: 13px; color: var(--ink-2); }
-  .onboard-actions { display: flex; gap: 10px; align-items: center; padding-top: 16px; border-top: 1px solid var(--rule); }
-
-</style>
+<script src="js/i18n.js"></script>
 </head>
 <body>
-<div id="proto-root"></div>
-<div id="google_translate_element" style="position:absolute;left:-9999px;top:0;height:0;overflow:hidden;"></div>
+<div id="root"></div>
 
-<script type="text/babel" src="tweaks-panel.jsx"></script>
 <script type="text/babel" src="js/shell.jsx"></script>
 <script type="text/babel" src="js/charts.jsx"></script>
 <script type="text/babel" src="js/pages-1.jsx"></script>
 <script type="text/babel" src="js/pages-2.jsx"></script>
 <script type="text/babel" src="js/app.jsx"></script>
-<script type="text/babel" src="js/prototype-extras.jsx"></script>
-<script type="text/babel" src="js/prototype-app.jsx"></script>
+<script type="text/babel" src="js/palette.jsx"></script>
 
 <script type="text/babel">
-const { useState: useS, useEffect: useE, useRef: useR, useMemo: useM } = React;
+const { useState: useS, useEffect: useE, useRef: useR, useMemo: useM, useCallback: useC } = React;
 
-const TWEAKS = /*EDITMODE-BEGIN*/{
-  "theme": "light",
-  "density": "comfortable",
-  "fontScale": 1,
-  "dyslexicFontEnabled": false,
-  "vlibrasEnabled": false,
-  "language": "en",
-  "showOnboarding": true,
-  "showStatusBar": true
-}/*EDITMODE-END*/;
+const SETTINGS_STORAGE_KEY = "hubSettingsV3";
+const prefersDark = () => {
+  try { return window.matchMedia("(prefers-color-scheme: dark)").matches; } catch (_) { return false; }
+};
+const DEFAULT_SETTINGS = {
+  theme: prefersDark() ? "dark" : "light",
+  fontScale: 1,
+  dyslexicFontEnabled: false,
+  vlibrasEnabled: false,
+  language: "auto",
+  onboardingSeen: false,
+};
 
-const SETTINGS_STORAGE_KEY = "hubSettingsV2";
-const SETTINGS_LOG_STORAGE_KEY = "hubSettingsLogV1";
-function readPersistedSettings() {
+function readSettings() {
   try {
-    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    return typeof parsed === "object" && parsed ? parsed : {};
+    localStorage.removeItem("hubSettingsLogV1");
+    const parsed = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY) || "{}");
+    return { ...DEFAULT_SETTINGS, ...(parsed && typeof parsed === "object" ? parsed : {}) };
   } catch (_) {
-    return {};
+    return { ...DEFAULT_SETTINGS };
   }
 }
 
-function appendSettingsLog(snapshot) {
-  try {
-    const existing = JSON.parse(localStorage.getItem(SETTINGS_LOG_STORAGE_KEY) || "[]");
-    const list = Array.isArray(existing) ? existing : [];
-    list.push({
-      at: new Date().toISOString(),
-      settings: snapshot,
-    });
-    const compact = list.slice(-200);
-    localStorage.setItem(SETTINGS_LOG_STORAGE_KEY, JSON.stringify(compact));
-  } catch (_) {
-    // noop
-  }
-}
-
-function applyGoogleTranslateLanguage(lang) {
-  const target = lang || "en";
-  const combo = document.querySelector(".goog-te-combo");
-  if (combo) {
-    combo.value = target;
-    combo.dispatchEvent(new Event("change"));
-    return;
-  }
-  const value = target === "pt" ? "/pt/pt" : `/pt/${target}`;
-  document.cookie = `googtrans=${value}; path=/`;
-}
-
-function ensureGoogleTranslateLoaded() {
-  if (window.__googleTranslateReady) return;
-  window.googleTranslateElementInit = function googleTranslateElementInit() {
-    if (!window.google || !window.google.translate || !window.google.translate.TranslateElement) return;
-    new window.google.translate.TranslateElement(
-      { pageLanguage: "pt", includedLanguages: "pt,en,es", autoDisplay: false },
-      "google_translate_element"
-    );
-    window.__googleTranslateReady = true;
-  };
-  if (!document.getElementById("google-translate-script")) {
-    const script = document.createElement("script");
-    script.id = "google-translate-script";
-    script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-    script.async = true;
-    document.body.appendChild(script);
-  }
+function saveSettings(settings) {
+  try { localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings)); } catch (_) { /* storage unavailable */ }
 }
 
 function ensureVlibrasLoaded() {
@@ -184,12 +72,10 @@ function ensureVlibrasLoaded() {
     if (done()) return;
 
     let attempts = 0;
-    const maxAttempts = 50;
     const poll = window.setInterval(() => {
       attempts += 1;
-      if (done()) {
-        window.clearInterval(poll);
-      } else if (attempts >= maxAttempts) {
+      if (done()) window.clearInterval(poll);
+      else if (attempts >= 50) {
         window.clearInterval(poll);
         reject(new Error("VLibras unavailable"));
       }
@@ -208,38 +94,39 @@ function ensureVlibrasLoaded() {
   return window.__vlibrasReadyPromise;
 }
 
-function Onboarding({ onClose }) {
+function Onboarding({ meta, onClose }) {
+  const startRef = useR(null);
+  useE(() => { startRef.current && startRef.current.focus(); }, []);
+  const md5 = meta?.source_hash?.articles_dataset_csv_md5 || "";
   return (
     <div className="onboard-overlay" onClick={onClose}>
-      <div className="onboard-card" onClick={(e) => e.stopPropagation()}>
+      <div className="onboard-card" role="dialog" aria-modal="true" aria-labelledby="onboard-title" onClick={(e) => e.stopPropagation()}>
         <div className="onboard-side">
-          <span className="vol">Vol. v1.1.0 · 2026-03-30</span>
-          <div className="title">Hub de Análise Científica</div>
+          <span className="vol">{meta ? `${meta.version} · ${meta.date}` : ""}</span>
+          <div className="title">{t("app.name")} {t("app.nameSub")}</div>
           <div className="stamp">
-            <strong>CORPUS</strong><br/>
-            580 artigos<br/>
-            32 tópicos<br/>
-            7 megatópicos<br/>
-            <br/>
-            <strong>FONTE</strong><br/>
-            md5 830f6f3f…
+            <strong>{t("onboard.corpus")}</strong><br/>
+            {t("onboard.articles", { n: fmtInt(meta?.n_articles || 0) })}<br/>
+            {t("onboard.topics", { n: meta?.n_topics || 0 })}<br/>
+            {t("onboard.megatopics", { n: meta?.n_megatopics || 0 })}<br/>
+            {md5 && <><br/><strong>{t("onboard.integrity")}</strong><br/>md5 {md5.slice(0, 8)}…</>}
           </div>
         </div>
         <div className="onboard-body">
-          <span style={{ fontFamily: "var(--mono)", fontSize: 10, letterSpacing: "0.18em", textTransform: "uppercase", color: "var(--accent-ink)" }}>Apparatus § Bem-vindo</span>
-          <h2 style={{ marginTop: 8 }}>Exploração reprodutível em três escalas.</h2>
-          <p>
-            Este protótipo demonstra o fluxo de leitura editorial sobre o corpus de violência contra a mulher. Comece pela <strong>pergunta</strong>, não pelo nível: cada salto de drill-down preserva o recorte ativo.
-          </p>
-          <div className="onboard-steps">
-            <div className="onboard-step"><span className="num">§ 01</span><span className="lbl">Use a barra lateral para navegar entre <strong>Macro · Meso · Micro</strong>.</span></div>
-            <div className="onboard-step"><span className="num">§ 02</span><span className="lbl">Clique em qualquer linha de tabela para abrir sua ficha no Apparatus à direita.</span></div>
-            <div className="onboard-step"><span className="num">§ 03</span><span className="lbl">No Meso, marque um tópico como <strong>+ B</strong> para abrir comparação A/B.</span></div>
-            <div className="onboard-step"><span className="num">§ 04</span><span className="lbl">Pressione <kbd style={{ fontFamily: "var(--mono)", fontSize: 11, padding: "2px 5px", border: "1px solid var(--rule-strong)" }}>⌘ K</kbd> para a paleta de comandos.</span></div>
-          </div>
+          <span className="onboard-kicker">{t("onboard.kicker")}</span>
+          <h2 id="onboard-title" style={{ marginTop: 8 }}>{t("onboard.title")}</h2>
+          <p>{t("onboard.body")}</p>
+          <ol className="onboard-steps">
+            {["s1", "s2", "s3", "s4"].map((k, i) => (
+              <li key={k} className="onboard-step">
+                <span className="num">§ 0{i + 1}</span>
+                <span className="lbl">{t("onboard." + k, { key: "Ctrl/⌘ K" })}</span>
+              </li>
+            ))}
+          </ol>
           <div className="onboard-actions">
-            <button className="btn-ed primary" onClick={onClose}>Começar exploração →</button>
-            <span style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.08em" }}>esc · ignorar</span>
+            <button ref={startRef} type="button" className="btn-ed primary" onClick={onClose}>{t("onboard.start")}</button>
+            <span className="onboard-skip">{t("onboard.skip")}</span>
           </div>
         </div>
       </div>
@@ -248,202 +135,107 @@ function Onboarding({ onClose }) {
 }
 
 function App() {
-  const persisted = useM(() => readPersistedSettings(), []);
-  const mergedTweaks = useM(() => ({ ...TWEAKS, ...persisted }), [persisted]);
-  const [tweaks, setTweaks] = useTweaks ? useTweaks(mergedTweaks) : [mergedTweaks, () => {}];
-  const updateTweaks = (patch) => {
-    if (!patch || typeof patch !== "object") return;
-    Object.entries(patch).forEach(([key, value]) => {
-      setTweaks(key, value);
-    });
-  };
-  const [showOnboard, setShowOnboard] = useS(tweaks.showOnboarding !== false);
+  const [settings, setSettings] = useS(readSettings);
+  const updateSettings = (patch) => setSettings((s) => ({ ...s, ...patch }));
+  // Resolve the language before rendering so every t() call below uses it.
+  const lang = useM(() => I18N.setLang(settings.language), [settings.language]);
   const [palette, setPalette] = useS(false);
   const [toast, setToast] = useS("");
-  const [level, setLevel] = useS("home");
+  const notify = useC((msg) => setToast(msg), []);
+  const clearToast = useC(() => setToast(""), []);
   const cmdRef = useR(null);
-  const lastSettingsLogRef = useR("");
+  const meta = useRes("data/meta.json");
+  const topics = useDatasetRes("topics");
+  const megatopics = useDatasetRes("megatopics");
 
-  // Apply theme + density tokens to root
-  useE(() => {
-    document.documentElement.setAttribute("data-density", tweaks.density);
-    document.documentElement.setAttribute("data-theme", tweaks.theme);
-    document.documentElement.setAttribute("data-font-family", tweaks.dyslexicFontEnabled ? "dyslexic" : "default");
-    document.documentElement.style.setProperty("--font-scale", String(tweaks.fontScale || 1));
-    document.documentElement.setAttribute("lang", tweaks.language || "en");
-  }, [tweaks.density, tweaks.theme, tweaks.dyslexicFontEnabled, tweaks.fontScale, tweaks.language]);
+  useE(() => { saveSettings(settings); }, [settings]);
 
   useE(() => {
-    const snapshot = {
-      density: tweaks.density,
-      theme: tweaks.theme,
-      fontScale: tweaks.fontScale,
-      dyslexicFontEnabled: tweaks.dyslexicFontEnabled,
-      vlibrasEnabled: tweaks.vlibrasEnabled,
-      language: tweaks.language,
-    };
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(snapshot));
-    const serialized = JSON.stringify(snapshot);
-    if (lastSettingsLogRef.current !== serialized) {
-      appendSettingsLog(snapshot);
-      lastSettingsLogRef.current = serialized;
-    }
-  }, [tweaks]);
+    const root = document.documentElement;
+    root.setAttribute("data-theme", settings.theme);
+    root.setAttribute("data-font-family", settings.dyslexicFontEnabled ? "dyslexic" : "default");
+    root.style.setProperty("--font-scale", String(settings.fontScale || 1));
+  }, [settings.theme, settings.dyslexicFontEnabled, settings.fontScale]);
 
   useE(() => {
-    ensureGoogleTranslateLoaded();
-  }, []);
-
-  useE(() => {
-    const apply = () => applyGoogleTranslateLanguage(tweaks.language || "en");
-    apply();
-    const timer = window.setTimeout(apply, 800);
-    return () => window.clearTimeout(timer);
-  }, [tweaks.language]);
-
-  useE(() => {
-    if (tweaks.vlibrasEnabled) {
-      let root = document.getElementById("vlibras-root");
-      if (!root) {
-        root = document.createElement("div");
-        root.id = "vlibras-root";
-        root.innerHTML = '<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>';
-        document.body.appendChild(root);
-      }
-      root.style.display = "";
-      ensureVlibrasLoaded()
-        .then(() => {
-          if (!window.__vlibrasWidget) {
-            window.__vlibrasWidget = new window.VLibras.Widget("https://vlibras.gov.br/app");
-          }
-        })
-        .catch(() => {
-          setToast("Falha ao carregar VLibras");
-        });
-      return undefined;
-    }
-
     const root = document.getElementById("vlibras-root");
-    if (root) root.style.display = "none";
-  }, [tweaks.vlibrasEnabled]);
+    if (!settings.vlibrasEnabled) {
+      if (root) root.style.display = "none";
+      return;
+    }
+    if (!root) {
+      const el = document.createElement("div");
+      el.id = "vlibras-root";
+      el.innerHTML = '<div vw class="enabled"><div vw-access-button class="active"></div><div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div></div>';
+      document.body.appendChild(el);
+    } else {
+      root.style.display = "";
+    }
+    ensureVlibrasLoaded()
+      .then(() => {
+        if (!window.__vlibrasWidget) window.__vlibrasWidget = new window.VLibras.Widget("https://vlibras.gov.br/app");
+      })
+      .catch(() => notify(t("settings.vlibrasError")));
+  }, [settings.vlibrasEnabled]);
 
-  // Keyboard shortcuts
+  const closeOnboarding = () => updateSettings({ onboardingSeen: true });
+  const send = (cmd) => cmdRef.current && cmdRef.current(cmd);
+
   useE(() => {
     const onKey = (e) => {
-      // Don't capture in inputs (except for cmd-K)
       const tag = (e.target?.tagName || "").toLowerCase();
-      const inField = tag === "input" || tag === "select" || tag === "textarea";
+      const inField = tag === "input" || tag === "select" || tag === "textarea" || e.target?.isContentEditable;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPalette(true); return; }
-      if (e.key === "Escape") { setPalette(false); setShowOnboard(false); return; }
-      if (inField) return;
-      if (e.key === "1") cmdRef.current && cmdRef.current({ type: "level", level: "home" });
-      else if (e.key === "2") cmdRef.current && cmdRef.current({ type: "level", level: "macro" });
-      else if (e.key === "3") cmdRef.current && cmdRef.current({ type: "level", level: "meso" });
-      else if (e.key === "4") cmdRef.current && cmdRef.current({ type: "level", level: "micro" });
-      else if (e.key.toLowerCase() === "r") { cmdRef.current && cmdRef.current({ type: "reset" }); setToast("Recorte resetado"); }
-      else if (e.key.toLowerCase() === "c") {
-        cmdRef.current && cmdRef.current({ type: "filter", patch: { geoMode: "context" } });
-        setToast("Modo Contexto");
-      }
+      if (e.key === "Escape") { setPalette(false); return; }
+      if (inField || e.metaKey || e.ctrlKey || e.altKey) return;
+      const levels = { "1": "home", "2": "macro", "3": "meso", "4": "micro" };
+      if (levels[e.key]) send({ type: "level", level: levels[e.key] });
+      else if (e.key.toLowerCase() === "r") { send({ type: "reset" }); notify(t("toast.reset")); }
+      else if (e.key.toLowerCase() === "c") send({ type: "toggle-geo" });
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // Need megatopics + topics for command palette suggestions — load lazily once
-  const [palData, setPalData] = useS({ megatopics: [], topics: [] });
   useE(() => {
-    const loadCsv = (name) => fetch(`data/${name}_dataset.csv`)
-      .then((r) => {
-        if (!r.ok) throw new Error("csv not found");
-        return r.text();
-      })
-      .then((text) => (typeof parseCsv === "function" ? parseCsv(text) : []));
-
-    Promise.all([
-      loadCsv("topics"),
-      loadCsv("megatopics"),
-    ]).then(([topics, megatopics]) => setPalData({ topics, megatopics })).catch(() => {});
-  }, []);
+    if (settings.onboardingSeen) return undefined;
+    const onKey = (e) => { if (e.key === "Escape") closeOnboarding(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [settings.onboardingSeen]);
 
   const handleAction = (cmd) => {
-    if (cmd.type === "toast") { setToast(cmd.msg); return; }
-    cmdRef.current && cmdRef.current(cmd);
-    if (cmd.type === "filter") setToast("Filtro aplicado");
-    if (cmd.type === "level") setToast("Nível: " + cmd.level);
-    if (cmd.type === "reset") setToast("Estado limpo");
-    if (cmd.type === "drill-mega") setToast("Megatópico selecionado");
-    if (cmd.type === "drill-topic") setToast("Tópico aberto");
+    send(cmd);
+    if (cmd.type === "filter") notify(t("toast.filter"));
+    if (cmd.type === "level") notify(t("toast.level", { level: t("level." + cmd.level) }));
+    if (cmd.type === "reset") notify(t("toast.reset"));
+    if (cmd.type === "drill-mega") notify(t("toast.mega"));
+    if (cmd.type === "drill-topic") notify(t("toast.topic"));
   };
 
   return (
     <>
-      <PrototypeHub
+      <HubApp
         commandRef={cmdRef}
-        onLevelChange={setLevel}
-        settings={tweaks}
-        onSettingsChange={updateTweaks}
+        settings={settings}
+        onSettingsChange={updateSettings}
+        onShowTour={() => updateSettings({ onboardingSeen: false })}
+        notify={notify}
+        lang={lang}
       />
 
-      {tweaks.showStatusBar && (
-        <div className="proto-statusbar">
-          <div className="status-left">
-            <span><span className="live-dot"></span>Sessão ativa</span>
-            <span>nível · {level}</span>
-            <span>artigos · 580</span>
-          </div>
-          <div className="status-center">
-            <span style={{ opacity: 0.6 }}>v1.1.0</span>
-            <span style={{ opacity: 0.6 }}>·</span>
-            <span style={{ opacity: 0.6 }}>release 2026-03-30</span>
-            <span style={{ opacity: 0.6 }}>·</span>
-            <span style={{ opacity: 0.6 }}>md5 830f6f3f</span>
-          </div>
-          <div className="status-right">
-            <span>⌘K · paleta</span>
-            <span>R · reset</span>
-            <span>1–4 · níveis</span>
-          </div>
-        </div>
-      )}
-
-      {showOnboard && <Onboarding onClose={() => setShowOnboard(false)} />}
+      {!settings.onboardingSeen && <Onboarding meta={meta.data} onClose={closeOnboarding} />}
 
       <CommandPalette open={palette} onClose={() => setPalette(false)}
                       onAction={handleAction}
-                      megatopics={palData.megatopics} topics={palData.topics} />
+                      megatopics={megatopics.data || []} topics={topics.data || []} />
 
-      <Toast msg={toast} onDone={() => setToast("")} />
-
-      {typeof TweaksPanel !== "undefined" && (
-        <TweaksPanel>
-          <TweakSection title="Tema">
-            <TweakRadio
-              label="Aparência"
-              value={tweaks.theme}
-              onChange={(v) => updateTweaks({ theme: v })}
-              options={[{ value: "light", label: "Claro" }, { value: "dark", label: "Escuro" }]}
-            />
-          </TweakSection>
-          <TweakSection title="Densidade">
-            <TweakRadio
-              label="Espaçamento"
-              value={tweaks.density}
-              onChange={(v) => updateTweaks({ density: v })}
-              options={[{ value: "comfortable", label: "Conforto" }, { value: "compact", label: "Compacto" }, { value: "dense", label: "Denso" }]}
-            />
-          </TweakSection>
-          <TweakSection title="Chrome do protótipo">
-            <TweakToggle label="Status bar" value={tweaks.showStatusBar} onChange={(v) => updateTweaks({ showStatusBar: v })} />
-            <TweakButton label="Reabrir tour de boas-vindas" onClick={() => setShowOnboard(true)} />
-          </TweakSection>
-        </TweaksPanel>
-      )}
+      <Toast msg={toast} onDone={clearToast} />
     </>
   );
 }
 
-ReactDOM.createRoot(document.getElementById("proto-root")).render(<App />);
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
 </script>
 </body>
 </html>

@@ -1,125 +1,95 @@
-/* global React */
+/* global React, t */
 const { useState, useMemo } = React;
 
+function SectionHead({ num, title, aside }) {
+  return (
+    <div className="section-head">
+      <div className="section-num">§ {num}</div>
+      <h2>{title}</h2>
+      {aside !== undefined && <div className="section-aside">{aside}</div>}
+    </div>
+  );
+}
+
 // ============ HOME ============
-function HomePage({ meta, megatopics, topics, articles, filtered, setLevel }) {
+function HomePage({ meta, megatopics, topics, articles, setLevel }) {
   const caps = [
-    { n: "01", title: "Drill-down tri-nível", body: "Navegue de 7 megatópicos → 32 tópicos → 580 artigos preservando o recorte em cada salto." },
-    { n: "02", title: "Filtros reprodutíveis", body: "Todo estado é serializado em URL. Recortes temporais, geográficos e temáticos são compartilháveis." },
-    { n: "03", title: "Cartografia científica", body: "Alterne entre o mapa de contexto empírico e o de produção científica com um clique." },
-    { n: "04", title: "Comparação A/B", body: "Dois tópicos lado a lado: volume, coerência (Cv), crescimento em 5 anos, diversidade de fluxos." },
-    { n: "05", title: "Coerência semântica", body: "Métrica Cv normalizada permite ranquear tópicos por qualidade interna do agrupamento." },
-    { n: "06", title: "Transparência metodológica", body: "Documentação clara do corpus e dos critérios de análise para auditoria ponta-a-ponta." },
+    { title: t("home.cap1t"), body: t("home.cap1b", { m: meta.n_megatopics, t: meta.n_topics, a: fmtInt(meta.n_articles) }) },
+    { title: t("home.cap2t"), body: t("home.cap2b") },
+    { title: t("home.cap3t"), body: t("home.cap3b") },
+    { title: t("home.cap4t"), body: t("home.cap4b") },
+    { title: t("home.cap5t"), body: t("home.cap5b") },
+    { title: t("home.cap6t"), body: t("home.cap6b") },
   ];
   const yearCounts = {};
   articles.forEach((a) => { yearCounts[a.year] = (yearCounts[a.year] || 0) + 1; });
   const yearData = Object.keys(yearCounts).map((y) => ({ year: +y, count: yearCounts[y] })).sort((a, b) => a.year - b.year);
+  const paths = [
+    { id: "micro", n: "01", count: fmtInt(meta.n_articles), sub: t("level.microSub"), note: t("home.microNote"), when: t("home.microWhen"),
+      side: (
+        <div style={{ background: "var(--paper-2)", padding: 14, border: "1px solid var(--rule)" }}>
+          <div className="mini-label">{t("home.series")}</div>
+          <YearSeries data={yearData} width={300} height={140} label={t("home.series")} />
+        </div>
+      ) },
+    { id: "meso", n: "02", count: meta.n_topics, sub: t("level.mesoSub"), note: t("home.mesoNote"), when: t("home.mesoWhen"),
+      side: <MiniTopicStar topics={topics} /> },
+    { id: "macro", n: "03", count: meta.n_megatopics, sub: t("level.macroSub"), note: t("home.macroNote"), when: t("home.macroWhen"),
+      side: (
+        <BarList
+          items={megatopics.map((m) => ({ id: m.megatopic_id, label: m.megatopic_description, value: m.article_count }))}
+          max={Math.max(...megatopics.map((m) => m.article_count))}
+          onClick={() => setLevel("macro")}
+        />
+      ) },
+  ];
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <h1 style={{ maxWidth: 720 }}>Um hub editorial para análise multinível de evidências em violência contra a mulher.</h1>
-          <p className="page-dek">
-            Exploração reprodutível em três escalas — artigos, tópicos, megatópicos — com contexto compartilhado entre visões,
-            mapas cruzando onde o fenômeno acontece e onde o conhecimento é produzido, e métricas que separam volume de coerência.
-          </p>
+          <h1 style={{ maxWidth: 720 }}>{t("home.title")}</h1>
+          <p className="page-dek">{t("home.dek")}</p>
         </div>
         <div className="page-stamp">
-          <strong>FONTE</strong><br/>
+          <strong>{t("home.source")}</strong><br/>
+          {meta.version} · {meta.date}<br/>
           articles · topics · megatopics
         </div>
       </div>
 
-      <div className="section-head">
-        <div className="section-num">§ 01</div>
-        <h2>Capacidades da plataforma</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>6 de 6</div>
-      </div>
+      <SectionHead num="01" title={t("home.capsTitle")} />
       <div className="cap-grid">
-        {caps.map((c) => (
-          <div key={c.n} className="cap">
-            <div className="cap-num">{c.n} / 06</div>
+        {caps.map((c, i) => (
+          <div key={i} className="cap">
+            <div className="cap-num">{String(i + 1).padStart(2, "0")} / {String(caps.length).padStart(2, "0")}</div>
             <h3>{c.title}</h3>
             <p>{c.body}</p>
           </div>
         ))}
       </div>
 
-      <div className="section-head">
-        <div className="section-num">§ 02</div>
-        <h2>Três caminhos de entrada</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>Micro → Meso → Macro</div>
-      </div>
+      <SectionHead num="02" title={t("home.pathsTitle")} aside="Micro → Meso → Macro" />
       <div className="path-stack">
-        <div className="module path-module">
-          <div className="path-main">
-            <div className="module-head">
-              <div className="module-title">01 · Micro · {fmtInt(meta?.n_articles)}</div>
-              <div className="module-sub">Artigos</div>
+        {paths.map((p) => (
+          <div key={p.id} className="module path-module">
+            <div className="path-main">
+              <div className="module-head">
+                <div className="module-title">{p.n} · {t("level." + p.id)} · {p.count}</div>
+                <div className="module-sub">{p.sub}</div>
+              </div>
+              <div className="module-note">{p.note}</div>
+              <div className="path-note"><strong>{t("home.when")}</strong> {p.when}</div>
+              <button type="button" className="btn-ed" style={{ marginTop: 14 }} onClick={() => setLevel(p.id)}>
+                {t("home.open", { level: t("level." + p.id) })}
+              </button>
             </div>
-            <div className="module-note">
-              Comece no nível mais granular para rastrear evidências por país, ano, periódico e fluxo de pesquisa. Aqui você observa o comportamento real do corpus antes de qualquer agregação.
-            </div>
-            <div className="path-note">
-              <strong>Quando usar:</strong> para perguntas específicas e validação de casos concretos.
-            </div>
-            <button className="btn-ed" style={{ marginTop: 14 }} onClick={() => setLevel("micro")}>Abrir Micro →</button>
+            <div className="path-side">{p.side}</div>
           </div>
-          <div className="path-side">
-            <div style={{ background: "var(--paper-2)", padding: 14, border: "1px solid var(--rule)" }}>
-              <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 8 }}>Série temporal do corpus</div>
-              <YearSeries data={yearData} width={300} height={140} />
-            </div>
-          </div>
-        </div>
-
-        <div className="module path-module">
-          <div className="path-main">
-            <div className="module-head">
-              <div className="module-title">02 · Meso · {meta?.n_topics}</div>
-              <div className="module-sub">Tópicos</div>
-            </div>
-            <div className="module-note">
-              Suba para o nível temático para comparar padrões recorrentes: volume, coerência (Cv) e crescimento ao longo do tempo.
-            </div>
-            <div className="path-note">
-              <strong>Quando usar:</strong> para identificar quais temas concentram produção e quais estão emergindo.
-            </div>
-            <button className="btn-ed" style={{ marginTop: 14 }} onClick={() => setLevel("meso")}>Abrir Meso →</button>
-          </div>
-          <div className="path-side">
-            <MiniTopicStar topics={topics} />
-          </div>
-        </div>
-
-        <div className="module path-module">
-          <div className="path-main">
-            <div className="module-head">
-              <div className="module-title">03 · Macro · {meta?.n_megatopics}</div>
-              <div className="module-sub">Megatópicos</div>
-            </div>
-            <div className="module-note">
-              Finalize no nível de síntese para enxergar os grandes blocos temáticos e entender a arquitetura geral do conhecimento no corpus.
-            </div>
-            <div className="path-note">
-              <strong>Quando usar:</strong> para comunicação executiva, visão estratégica e comparação entre eixos amplos.
-            </div>
-            <button className="btn-ed" style={{ marginTop: 14 }} onClick={() => setLevel("macro")}>Abrir Macro →</button>
-          </div>
-          <div className="path-side">
-            <BarList
-              items={megatopics.slice(0, 7).map((m) => ({ label: m.megatopic_description, value: m.article_count }))}
-              max={Math.max(...megatopics.map(m => m.article_count))}
-              onClick={() => setLevel("macro")}
-            />
-          </div>
-        </div>
+        ))}
       </div>
 
-      <div className="footnote">
-        Este hub é um material complementar estático para exploração multinível do conjunto de dados de pesquisa sobre violência contra a mulher. Toda computação é feita no navegador a partir de JSONs versionados.
-      </div>
+      <div className="footnote">{t("home.footnote")}</div>
     </div>
   );
 }
@@ -130,23 +100,17 @@ function MiniTopicStar({ topics }) {
   const cy = size / 2;
   const rMin = 52;
   const rMax = 142;
-  const maxCount = Math.max(1, ...topics.map((t) => t.article_count || 0));
-  const rows = topics.slice(0, 32);
-  const points = rows.map((t, i) => {
-    const angle = (-Math.PI / 2) + (i / Math.max(1, rows.length)) * Math.PI * 2;
-    const intensity = (t.article_count || 0) / maxCount;
+  const maxCount = Math.max(1, ...topics.map((tp) => tp.article_count || 0));
+  const points = topics.map((tp, i) => {
+    const angle = (-Math.PI / 2) + (i / Math.max(1, topics.length)) * Math.PI * 2;
+    const intensity = (tp.article_count || 0) / maxCount;
     const radius = rMin + intensity * (rMax - rMin);
-    return {
-      ...t,
-      x: cx + Math.cos(angle) * radius,
-      y: cy + Math.sin(angle) * radius,
-      dot: 2.5 + intensity * 5.5,
-    };
+    return { ...tp, x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius, dot: 2.5 + intensity * 5.5 };
   });
 
   return (
     <div className="topic-star-mini-wrap">
-      <svg className="topic-star-mini" viewBox={`0 0 ${size} ${size}`} role="img" aria-label="Prévia em estrela dos 32 tópicos">
+      <svg className="topic-star-mini" viewBox={`0 0 ${size} ${size}`} role="img" aria-label={t("home.starLabel")}>
         {[0.25, 0.5, 0.75, 1].map((k) => (
           <circle key={k} cx={cx} cy={cy} r={rMin + (rMax - rMin) * k} fill="none" stroke="var(--rule)" strokeDasharray="2 4" />
         ))}
@@ -154,145 +118,143 @@ function MiniTopicStar({ topics }) {
           <line key={`ray-${p.topic_id}`} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--rule)" strokeOpacity="0.6" />
         ))}
         {points.map((p) => (
-          <circle key={p.topic_id} cx={p.x} cy={p.y} r={p.dot} fill="var(--accent)" fillOpacity="0.75" stroke="var(--paper)" strokeWidth="1" />
+          <circle key={p.topic_id} cx={p.x} cy={p.y} r={p.dot} fill="var(--accent)" fillOpacity="0.75" stroke="var(--paper)" strokeWidth="1">
+            <title>{`T${p.topic_id} · ${p.topic_description}: ${p.article_count}`}</title>
+          </circle>
         ))}
         <circle cx={cx} cy={cy} r="26" fill="var(--paper-2)" stroke="var(--rule-strong)" />
-        <text x={cx} y={cy - 2} textAnchor="middle" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-4)" style={{ letterSpacing: "0.08em" }}>
-          MESO
-        </text>
-        <text x={cx} y={cy + 11} textAnchor="middle" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)">
-          32 tópicos
-        </text>
+        <text x={cx} y={cy - 2} textAnchor="middle" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-4)" style={{ letterSpacing: "0.08em" }}>MESO</text>
+        <text x={cx} y={cy + 11} textAnchor="middle" fontFamily="var(--mono)" fontSize="9" fill="var(--ink-3)">{t("home.topics", { n: topics.length })}</text>
       </svg>
     </div>
   );
 }
 
 // ============ MACRO ============
-function MacroPage({ megatopics, filtered, onSelectMega, selectedMega }) {
-  const byMega = {};
-  filtered.forEach((a) => { byMega[a.megatopic_id] = (byMega[a.megatopic_id] || 0) + 1; });
-  const totalCountries = new Set(filtered.map((a) => a.study_country)).size;
-  const totalJournals = new Set(filtered.map((a) => a.journal)).size;
-  const totalCross = filtered.filter((a) => a.flow === "Cross-continental" || a.flow === "Multi-national").length;
-  const rows = megatopics.map((m) => ({
-    ...m,
-    filtered_count: byMega[m.megatopic_id] || 0,
-    coherence_norm: Math.min(1, Math.max(0, (m.coherence_cv_mean - 0.5) / 0.4)),
-    growth_norm: Math.min(1, Math.max(0, m.growth_rate_5yr / 3)),
-  })).sort((a, b) => b.filtered_count - a.filtered_count);
+function MacroPage({ megatopics, filtered, corpusSize, onSelectMega, selectedMega }) {
+  const byMega = groupStats(filtered, "megatopic_id");
+  const rows = megatopics
+    .map((m) => {
+      const g = byMega[m.megatopic_id] || { n: 0, n_countries: 0, top_countries: [] };
+      return { ...m, filtered_count: g.n, n_countries: g.n_countries, top_countries: g.top_countries };
+    })
+    .sort((a, b) => b.filtered_count - a.filtered_count);
 
   return (
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">Nível Macro · Síntese por megatópico</div>
-          <h1>Sete blocos temáticos que organizam o corpus.</h1>
-          <p className="page-dek">Cada megatópico agrupa tópicos relacionados. As métricas abaixo cruzam volume filtrado, coerência semântica média e crescimento quinquenal — selecione um bloco para descer ao nível meso.</p>
+          <div className="page-kicker">{t("macro.kicker")}</div>
+          <h1>{t("macro.title")}</h1>
+          <p className="page-dek">{t("macro.dek")}</p>
         </div>
         <div className="page-stamp">
-          <strong>NA SELEÇÃO</strong><br/>
-          {fmtInt(filtered.length)} artigos<br/>
-          {megatopics.length} megatópicos<br/>
+          <strong>{t("macro.inSelection")}</strong><br/>
+          {t("unit.articles", { n: fmtInt(filtered.length) })}<br/>
+          {t("unit.megatopics", { n: megatopics.length })}<br/>
           <br/>
-          <strong>ORDENAÇÃO</strong><br/>
-          artigos filtrados ↓
+          <strong>{t("macro.sort")}</strong><br/>
+          {t("macro.sortValue")}
         </div>
       </div>
-      <KpiStrip
-        articles={filtered}
-        totalArticles={filtered.length}
-        totalCountries={totalCountries}
-        totalJournals={totalJournals}
-        totalCross={totalCross}
-      />
+      <KpiStrip articles={filtered} corpusSize={corpusSize} />
 
-      <div className="section-head">
-        <div className="section-num">§ 01</div>
-        <h2>Dominância por volume filtrado</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>{fmtInt(filtered.length)} artigos</div>
-      </div>
+      <SectionHead num="01" title={t("macro.volume")} aside={t("unit.articles", { n: fmtInt(filtered.length) })} />
 
       <div className="col-12">
         <div className="col-span-7">
           <BarList
             items={rows.map((r) => ({ label: r.megatopic_description, value: r.filtered_count, id: r.megatopic_id }))}
-            max={Math.max(...rows.map(r => r.filtered_count), 1)}
-            onClick={(it) => onSelectMega(rows.find(r => r.megatopic_id === it.id))}
+            max={Math.max(...rows.map((r) => r.filtered_count), 1)}
+            onClick={(it) => onSelectMega(rows.find((r) => r.megatopic_id === it.id))}
           />
         </div>
         <div className="col-span-5">
-          <div className="module-note" style={{ marginTop: 0 }}>
-            <em>Coerência × crescimento.</em> Eixo horizontal: coerência média normalizada. Vertical: crescimento em 5 anos. Tamanho do círculo: artigos no recorte.
-          </div>
+          <div className="module-note" style={{ marginTop: 0 }}>{t("macro.scatterNote")}</div>
           <CoherenceScatter rows={rows} onSelect={onSelectMega} selected={selectedMega} />
         </div>
       </div>
 
-      <div className="section-head">
-        <div className="section-num">§ 02</div>
-        <h2>Tabela sinóptica</h2>
-        <div style={{ fontFamily: "var(--mono)", fontSize: 10, color: "var(--ink-4)", letterSpacing: "0.14em", textTransform: "uppercase" }}>clique para abrir</div>
-      </div>
+      <SectionHead num="02" title={t("macro.table")} aside={t("macro.clickHint")} />
 
-      <table className="ed">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Megatópico</th>
-            <th style={{ textAlign: "right" }}>Artigos ⌀</th>
-            <th style={{ textAlign: "right" }}>Tópicos</th>
-            <th style={{ textAlign: "right" }}>Cv médio</th>
-            <th style={{ textAlign: "right" }}>Cresc. 5a</th>
-            <th style={{ textAlign: "right" }}>Países</th>
-            <th>Top 3 países</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={r.megatopic_id} className={selectedMega?.megatopic_id === r.megatopic_id ? "selected" : ""} onClick={() => onSelectMega(r)}>
-              <td className="num">{String(i + 1).padStart(2, "0")}</td>
-              <td className="title">{r.megatopic_description}</td>
-              <td className="num" style={{ textAlign: "right" }}>{fmtInt(r.filtered_count)}</td>
-              <td className="num" style={{ textAlign: "right" }}>{r.n_topics}</td>
-              <td className="num" style={{ textAlign: "right" }}>{r.coherence_cv_mean.toFixed(3)}</td>
-              <td className="num" style={{ textAlign: "right", color: r.growth_rate_5yr > 0 ? "var(--positive)" : "var(--crimson)" }}>
-                {(r.growth_rate_5yr * 100).toFixed(0)}%
-              </td>
-              <td className="num" style={{ textAlign: "right" }}>{r.n_countries}</td>
-              <td style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)" }}>{r.top_countries.split(";").slice(0, 3).join(" ·")}</td>
+      <div className="table-wrap">
+        <table className="ed">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">{t("macro.colMega")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.articles")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.topics")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.cvMean")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.growth")}</th>
+              <th scope="col" style={{ textAlign: "right" }}>{t("col.countries")}</th>
+              <th scope="col">{t("macro.colTop")}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.megatopic_id} className={selectedMega?.megatopic_id === r.megatopic_id ? "selected" : ""}>
+                <td className="num">{String(i + 1).padStart(2, "0")}</td>
+                <td className="title"><button type="button" className="link-btn" onClick={() => onSelectMega(r)}>{r.megatopic_description}</button></td>
+                <td className="num" style={{ textAlign: "right" }}>{fmtInt(r.filtered_count)}</td>
+                <td className="num" style={{ textAlign: "right" }}>{r.n_topics}</td>
+                <td className="num" style={{ textAlign: "right" }}>{fmtDec(r.coherence_cv_mean)}</td>
+                <td className="num" title={growthTip(r.growth_prev, r.growth_last)}
+                    style={{ textAlign: "right", color: r.growth_rate_5yr > 0 ? "var(--positive)" : r.growth_rate_5yr < 0 ? "var(--crimson)" : "var(--ink-3)" }}>
+                  {fmtGrowth(r.growth_rate_5yr, r.growth_prev, r.growth_last)}
+                </td>
+                <td className="num" style={{ textAlign: "right" }}>{r.n_countries}</td>
+                <td style={{ fontFamily: "var(--mono)", fontSize: 11, color: "var(--ink-3)" }}>{r.top_countries.slice(0, 3).join(" · ")}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
 
+// Axes show the real values (mean Cv and 5-year growth), with ticks.
 function CoherenceScatter({ rows, onSelect, selected }) {
-  const w = 340, h = 260, pad = { t: 12, r: 20, b: 30, l: 40 };
-  const ix = (v) => pad.l + v * (w - pad.l - pad.r);
-  const iy = (v) => h - pad.b - v * (h - pad.t - pad.b);
+  const w = 360, h = 270, pad = { t: 14, r: 20, b: 40, l: 52 };
+  const valid = rows.filter((r) => Number.isFinite(r.coherence_cv_mean) && Number.isFinite(r.growth_rate_5yr));
+  if (!valid.length) return <div className="chart-empty" style={{ height: h }}>{t("chart.noData")}</div>;
+  const xs = valid.map((r) => r.coherence_cv_mean);
+  const ys = valid.map((r) => r.growth_rate_5yr);
+  const xMin = Math.floor(Math.min(...xs) * 20) / 20, xMax = Math.ceil(Math.max(...xs) * 20) / 20;
+  const yMin = Math.min(0, Math.floor(Math.min(...ys) * 2) / 2), yMax = Math.ceil(Math.max(...ys) * 2) / 2;
+  const ix = (v) => pad.l + ((v - xMin) / (xMax - xMin || 1)) * (w - pad.l - pad.r);
+  const iy = (v) => h - pad.b - ((v - yMin) / (yMax - yMin || 1)) * (h - pad.t - pad.b);
+  const xTicks = [0, 0.5, 1].map((k) => xMin + k * (xMax - xMin));
+  const yTicks = [0, 0.5, 1].map((k) => yMin + k * (yMax - yMin));
+  const maxFiltered = Math.max(...valid.map((x) => x.filtered_count), 1);
   return (
-    <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block", border: "1px solid var(--rule)", background: "var(--paper)" }}>
-      {[0, 0.25, 0.5, 0.75, 1].map((g) => (
-        <g key={g}>
-          <line x1={ix(g)} x2={ix(g)} y1={pad.t} y2={h - pad.b} stroke="var(--rule)" strokeDasharray="2 3" />
-          <line x1={pad.l} x2={w - pad.r} y1={iy(g)} y2={iy(g)} stroke="var(--rule)" strokeDasharray="2 3" />
+    <svg width="100%" viewBox={`0 0 ${w} ${h}`} style={{ display: "block", border: "1px solid var(--rule)", background: "var(--paper)" }}
+         role="img" aria-label={t("macro.scatterNote")}>
+      {xTicks.map((v) => (
+        <g key={"x" + v}>
+          <line x1={ix(v)} x2={ix(v)} y1={pad.t} y2={h - pad.b} stroke="var(--rule)" strokeDasharray="2 3" />
+          <text x={ix(v)} y={h - pad.b + 14} fontSize="9" textAnchor="middle" fill="var(--ink-4)" fontFamily="var(--mono)">{fmtDec(v, 2)}</text>
         </g>
       ))}
-      <text x={ix(0.5)} y={h - 6} fontSize="10" textAnchor="middle" fill="var(--ink-4)" fontFamily="var(--mono)" style={{ textTransform: "uppercase", letterSpacing: "0.1em" }}>Coerência ⟶</text>
-      <text transform={`translate(12, ${iy(0.5)}) rotate(-90)`} fontSize="10" textAnchor="middle" fill="var(--ink-4)" fontFamily="var(--mono)" style={{ textTransform: "uppercase", letterSpacing: "0.1em" }}>Crescimento 5a ⟶</text>
-      {rows.map((r) => {
-        const maxFiltered = Math.max(...rows.map(x => x.filtered_count), 1);
+      {yTicks.map((v) => (
+        <g key={"y" + v}>
+          <line x1={pad.l} x2={w - pad.r} y1={iy(v)} y2={iy(v)} stroke="var(--rule)" strokeDasharray="2 3" />
+          <text x={pad.l - 6} y={iy(v) + 3} fontSize="9" textAnchor="end" fill="var(--ink-4)" fontFamily="var(--mono)">{fmtGrowth(v)}</text>
+        </g>
+      ))}
+      {yMin < 0 && <line x1={pad.l} x2={w - pad.r} y1={iy(0)} y2={iy(0)} stroke="var(--rule-strong)" />}
+      <text x={(pad.l + w - pad.r) / 2} y={h - 6} fontSize="10" textAnchor="middle" fill="var(--ink-3)" fontFamily="var(--mono)">{t("axis.coherence")} →</text>
+      <text transform={`translate(12, ${(pad.t + h - pad.b) / 2}) rotate(-90)`} fontSize="10" textAnchor="middle" fill="var(--ink-3)" fontFamily="var(--mono)">{t("axis.growth")} →</text>
+      {valid.map((r) => {
         const size = 4 + (r.filtered_count / maxFiltered) * 18;
+        const isSel = selected?.megatopic_id === r.megatopic_id;
         return (
           <g key={r.megatopic_id} onClick={() => onSelect(r)} style={{ cursor: "pointer" }}>
-            <circle cx={ix(r.coherence_norm)} cy={iy(r.growth_norm)} r={size}
-                    fill={selected?.megatopic_id === r.megatopic_id ? "var(--accent)" : "var(--accent)"}
-                    fillOpacity={selected?.megatopic_id === r.megatopic_id ? 0.8 : 0.35}
-                    stroke="var(--accent)" strokeWidth="1" />
-            <text x={ix(r.coherence_norm)} y={iy(r.growth_norm) - size - 3} fontSize="9" textAnchor="middle" fill="var(--ink-2)" fontFamily="var(--sans)">
+            <title>{`M${r.megatopic_id} · ${r.megatopic_description}`}</title>
+            <circle cx={ix(r.coherence_cv_mean)} cy={iy(r.growth_rate_5yr)} r={size}
+                    fill="var(--accent)" fillOpacity={isSel ? 0.8 : 0.35} stroke="var(--accent)" strokeWidth="1" />
+            <text x={ix(r.coherence_cv_mean)} y={iy(r.growth_rate_5yr) - size - 3} fontSize="9" textAnchor="middle" fill="var(--ink-2)" fontFamily="var(--sans)">
               M{r.megatopic_id}
             </text>
           </g>
@@ -302,4 +264,4 @@ function CoherenceScatter({ rows, onSelect, selected }) {
   );
 }
 
-Object.assign(window, { HomePage, MacroPage });
+Object.assign(window, { HomePage, MacroPage, SectionHead });

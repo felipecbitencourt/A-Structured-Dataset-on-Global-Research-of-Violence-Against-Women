@@ -1,0 +1,11 @@
+name = "vcm"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+# Plataforma servida como arquivos estáticos em vcm.cienciaberta.com.
+routes = [
+  { pattern = "vcm.cienciaberta.com", custom_domain = true }
+]
+
+[assets]
+directory = "."
