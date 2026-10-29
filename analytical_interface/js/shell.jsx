@@ -176,9 +176,6 @@ function Masthead({ meta, settings, onSettingsChange, onShowTour }) {
           {t("app.name")} <span className="masthead-sub">{t("app.nameSub")}</span>
         </div>
       </div>
-      <div className="masthead-center">
-        {t("masthead.edition", { version: meta?.version || "—", n: fmtInt(meta?.n_articles || 0), date: meta?.date || "—" })}
-      </div>
       <div className="masthead-settings-wrap">
         <button
           ref={buttonRef}
@@ -271,11 +268,7 @@ function LevelNav({ level, setLevel, counts, selectedTopic, selectedMega, clearD
           aria-current={level === l.id ? "page" : undefined}
           onClick={() => setLevel(l.id)}
         >
-          <span className="level-marker" aria-hidden="true">{l.marker}</span>
-          <span>
-            <span className="level-name">{l.name}</span>
-            {l.sub && <span className="level-sub">{l.sub}</span>}
-          </span>
+          <span className="level-name">{l.name}</span>
           <span className="level-count">{l.count || ""}</span>
         </button>
       ))}
@@ -379,23 +372,19 @@ function KpiStrip({ articles, corpusSize }) {
     <div className="kpi-strip">
       <div className="kpi">
         <div className="kpi-label">{t("kpi.articles")}</div>
-        <div className="kpi-value">{fmtInt(total)}<span className="kpi-unit">{t("kpi.of", { n: fmtInt(corpusSize) })}</span></div>
-        <div className="kpi-delta">{t("kpi.share", { pct: fmtPct(total / Math.max(1, corpusSize)) })}</div>
+        <div className="kpi-value">{fmtInt(total)}</div>
       </div>
       <div className="kpi">
         <div className="kpi-label">{t("kpi.countries")}</div>
-        <div className="kpi-value">{fmtInt(countries)}<span className="kpi-unit">{t("kpi.unique")}</span></div>
-        <div className="kpi-delta">{t("kpi.countriesNote")}</div>
+        <div className="kpi-value">{fmtInt(countries)}</div>
       </div>
       <div className="kpi">
         <div className="kpi-label">{t("kpi.journals")}</div>
-        <div className="kpi-value">{fmtInt(journals)}<span className="kpi-unit">{t("kpi.journalsUnit")}</span></div>
-        <div className="kpi-delta">{t("kpi.journalsNote")}</div>
+        <div className="kpi-value">{fmtInt(journals)}</div>
       </div>
       <div className="kpi">
         <div className="kpi-label">{t("kpi.cross")}</div>
-        <div className="kpi-value">{fmtInt(cross)}<span className="kpi-unit">{fmtPct(cross / Math.max(1, total), 0)}</span></div>
-        <div className="kpi-delta">{t("kpi.crossNote")}</div>
+        <div className="kpi-value">{fmtInt(cross)}</div>
       </div>
     </div>
   );

@@ -39,18 +39,8 @@ function MesoPage({ topics, filtered, corpusSize, selectedMega, onSelectTopic, s
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">{t("meso.kicker", { n: rows.length })}{selectedMega ? t("meso.kickerMega", { mega: selectedMega.megatopic_description }) : ""}</div>
           <h1>{t("meso.title")}</h1>
           <p className="page-dek">{t("meso.dek")}</p>
-        </div>
-        <div className="page-stamp">
-          <strong>{t("macro.inSelection")}</strong><br/>
-          {t("home.topics", { n: rows.length })}<br/>
-          {t("unit.articles", { n: fmtInt(rows.reduce((s, r) => s + r.filtered_count, 0)) })}<br/>
-          <br/>
-          <strong>{t("meso.compare")}</strong><br/>
-          {selectedTopic ? "A: T" + selectedTopic.topic_id : "—"}<br/>
-          {compareTopic ? "B: T" + compareTopic.topic_id : "—"}
         </div>
       </div>
       <KpiStrip articles={filtered} corpusSize={corpusSize} />
@@ -63,7 +53,7 @@ function MesoPage({ topics, filtered, corpusSize, selectedMega, onSelectTopic, s
 
       <SectionHead num="02" title={t("meso.ranking")} aside={t("meso.rankingHint")} />
       <div className="table-wrap">
-        <table className="ed">
+        <table className="ed tbl-meso">
           <thead>
             <tr>
               <th scope="col">#</th>
@@ -256,16 +246,8 @@ function MicroPage({ filtered, corpusSize, filters, setFilters, dark, lang }) {
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">{t("micro.kicker", { n: fmtInt(filtered.length) })}</div>
           <h1>{t("micro.title")}</h1>
           <p className="page-dek">{t("micro.dek")}</p>
-        </div>
-        <div className="page-stamp">
-          <strong>{t("micro.stamp")}</strong><br/>
-          {t("unit.articles", { n: fmtInt(filtered.length) })}<br/>
-          {t("micro.stampTopics", { n: new Set(filtered.map((a) => a.topic_id)).size })}<br/>
-          {t("micro.stampCountries", { n: uniqueCount(filtered, "study_countries") })}<br/>
-          {years.length ? (Math.min(...years) + "–" + Math.max(...years)) : "—"}
         </div>
       </div>
       <KpiStrip articles={filtered} corpusSize={corpusSize} />
@@ -273,7 +255,6 @@ function MicroPage({ filtered, corpusSize, filters, setFilters, dark, lang }) {
       {filtered.length === 0 && <div className="empty-state" role="status">{t("micro.empty")}</div>}
 
       <div className="section-head">
-        <div className="section-num">§ 01</div>
         <h2>{t("micro.maps")}</h2>
         <div className="segmented" role="group" aria-label={t("filters.geoMode")}>
           <button type="button" className={"btn-ed" + (mapMode === "context" ? " is-on" : "")} aria-pressed={mapMode === "context"} onClick={() => setMapMode("context")}>
@@ -307,7 +288,6 @@ function MicroPage({ filtered, corpusSize, filters, setFilters, dark, lang }) {
       </div>
 
       <div className="section-head">
-        <div className="section-num">§ 02</div>
         <h2>{t("micro.articles", { n: fmtInt(sorted.length) })}</h2>
         <div className="section-aside">
           {t("micro.sort")}&nbsp;
@@ -317,7 +297,7 @@ function MicroPage({ filtered, corpusSize, filters, setFilters, dark, lang }) {
       </div>
 
       <div className="table-wrap">
-        <table className="ed">
+        <table className="ed tbl-micro">
           <thead>
             <tr>
               <th scope="col">{t("col.year")}</th>
@@ -380,14 +360,8 @@ function SearchPage({ filtered }) {
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">{t("search.kicker")}</div>
           <h1>{t("search.title")}</h1>
           <p className="page-dek">{t("search.dek")}</p>
-        </div>
-        <div className="page-stamp">
-          <strong>{t("search.base")}</strong><br/>
-          {t("unit.articles", { n: fmtInt(filtered.length) })}<br/>
-          {t("search.baseNote")}
         </div>
       </div>
 
@@ -406,14 +380,12 @@ function SearchPage({ filtered }) {
       </div>
 
       <div className="section-head">
-        <div className="section-num">§ 01</div>
         <h2 aria-live="polite">{t("search.results", { n: fmtInt(matches.length) })}</h2>
-        <div className="section-aside">{q ? t("search.term", { q }) : t("search.typeToStart")}</div>
       </div>
 
       {q ? (
         <div className="table-wrap">
-          <table className="ed">
+          <table className="ed tbl-search">
             <thead>
               <tr>
                 <th scope="col">{t("col.year")}</th>

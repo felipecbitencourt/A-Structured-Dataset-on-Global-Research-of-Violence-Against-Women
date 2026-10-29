@@ -1088,3 +1088,50 @@ button.barlist-row { padding: 6px 0; }
   .settings-menu { width: min(280px, calc(100vw - 32px)); }
   :root { --fs-h1-raw: 30px; }
 }
+
+/* ---------- visual mais limpo ---------- */
+.sidebar-download-row { display: flex; flex-wrap: wrap; gap: 6px; padding-right: 20px; }
+.level-item { grid-template-columns: 1fr auto; }
+.section-head { grid-template-columns: 1fr; }
+.masthead { grid-template-columns: 1fr auto; }
+.level-item { padding-left: 14px; }
+.barlist-row .bar-track, .barlist-row .bar-fill { display: block; }
+.path-module .module-sub { display: none; }
+.sidebar-downloads { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ---------- celular ---------- */
+@media (max-width: 900px) {
+  .masthead-sub { display: none; }
+  .masthead-title { white-space: nowrap; }
+  .breadcrumb { display: none; }
+  .sidebar { padding: 8px 16px 12px; gap: 8px; position: sticky; top: 0; z-index: 20; background: var(--paper); }
+  /* níveis viram abas roláveis */
+  .sidebar-section:first-child > .sidebar-toggle { display: none; }
+  .level-nav { flex-direction: row; gap: 4px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 0 16px; }
+  .level-nav::-webkit-scrollbar { display: none; }
+  .level-item { flex: 0 0 auto; width: auto; display: block; padding: 8px 8px; border-left: 0; border-bottom: 2px solid transparent; white-space: nowrap; }
+  .level-item.active { border-bottom-color: var(--accent); }
+  .level-item .level-count { display: none; }
+  .level-name { font-size: 15px; }
+  .sidebar-toggle { padding: 8px 0; }
+  .sidebar-body { max-height: 60vh; overflow-y: auto; }
+  .main { padding: 16px; }
+  /* tabelas: só as colunas essenciais */
+  .tbl-macro th:nth-child(4), .tbl-macro td:nth-child(4),
+  .tbl-macro th:nth-child(7), .tbl-macro td:nth-child(7),
+  .tbl-macro th:nth-child(8), .tbl-macro td:nth-child(8),
+  .tbl-meso th:nth-child(3), .tbl-meso td:nth-child(3),
+  .tbl-meso th:nth-child(7), .tbl-meso td:nth-child(7),
+  .tbl-meso th:nth-child(8), .tbl-meso td:nth-child(8),
+  .tbl-micro th:nth-child(3), .tbl-micro td:nth-child(3),
+  .tbl-micro th:nth-child(5), .tbl-micro td:nth-child(5),
+  .tbl-micro th:nth-child(7), .tbl-micro td:nth-child(7),
+  .tbl-search th:nth-child(3), .tbl-search td:nth-child(3),
+  .tbl-search th:nth-child(4), .tbl-search td:nth-child(4) { display: none; }
+  .table-wrap { overflow-x: auto; }
+  /* fluxo vira só uma bolinha colorida */
+  .tbl-micro td:nth-child(6) .chip, .tbl-micro td:nth-child(6) > * { font-size: 0; width: 14px; height: 14px; padding: 0; border-radius: 50%; display: inline-block; }
+  .tbl-micro th:nth-child(6) { font-size: 0; }
+  .tbl-micro th:nth-child(4) { white-space: nowrap; }
+  table.ed { font-size: 14px; }
+}

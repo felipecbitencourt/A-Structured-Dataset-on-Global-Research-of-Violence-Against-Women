@@ -297,7 +297,7 @@ function HubApp({ commandRef, settings, onSettingsChange, onShowTour, notify, la
   const [selectedMega, setSelectedMega] = useStateApp(null);
   const [selectedTopic, setSelectedTopic] = useStateApp(null);
   const [compareTopic, setCompareTopic] = useStateApp(null);
-  const [sidebarOpen, setSidebarOpen] = useStateApp({ levels: true, guide: true, filters: true });
+  const [sidebarOpen, setSidebarOpen] = useStateApp(() => ({ levels: true, filters: !window.matchMedia("(max-width: 900px)").matches }));
   const dark = settings.theme === "dark";
 
   // Restore the selection from the link once the tables are loaded.
@@ -391,7 +391,6 @@ function HubApp({ commandRef, settings, onSettingsChange, onShowTour, notify, la
       <aside className="sidebar">
         <SidebarSection
           title={t("sidebar.levels")}
-          count={counts.articles + " · " + counts.topics + " · " + counts.megatopics}
           isOpen={sidebarOpen.levels}
           onToggle={() => setSidebarOpen((s) => ({ ...s, levels: !s.levels }))}
         >
@@ -400,32 +399,24 @@ function HubApp({ commandRef, settings, onSettingsChange, onShowTour, notify, la
         </SidebarSection>
         <SidebarSection
           title={t("sidebar.filters")}
-          count={filters.yearMin + "–" + filters.yearMax}
+          count={[filters.yearMin !== YEAR_MIN || filters.yearMax !== YEAR_MAX, !!filters.country, !!filters.flow].filter(Boolean).length || ""}
           isOpen={sidebarOpen.filters}
           onToggle={() => setSidebarOpen((s) => ({ ...s, filters: !s.filters }))}
         >
           <Filters filters={filters} setFilters={setFilters} options={{ countries: countryOptions }} />
-        </SidebarSection>
-        <SidebarSection
-          title={t("sidebar.guide")}
-          isOpen={sidebarOpen.guide}
-          onToggle={() => setSidebarOpen((s) => ({ ...s, guide: !s.guide }))}
-        >
-          <SidebarGuide actions={guideActions} />
-        </SidebarSection>
-        <div className="sidebar-section sidebar-keys">
-          <div className="sidebar-label">{t("sidebar.shortcuts")}</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, paddingRight: 20 }}>
-            <KeyboardRow k="Ctrl/⌘ K" v={t("keys.palette")} />
-            <KeyboardRow k="1 · 2 · 3 · 4" v={t("keys.levels")} />
-            <KeyboardRow k="R" v={t("keys.reset")} />
-            <KeyboardRow k="C" v={t("keys.geo")} />
+          <div className="sidebar-downloads">
+            <div className="sidebar-label">{t("sidebar.download")}</div>
+            <div className="sidebar-download-row">
+              <button type="button" className="chip" onClick={exportCsv}>CSV</button>
+              <button type="button" className="chip" onClick={exportJson}>JSON</button>
+              <button type="button" className="chip" onClick={() => copyViewLink(notify)}>{t("sidebar.copyLink")}</button>
+            </div>
           </div>
-        </div>
+        </SidebarSection>
       </aside>
 
       <main className="main" id="main-content" tabIndex={-1}>
-        <Breadcrumb level={level} setLevel={setLevel} mega={selectedMega} topic={selectedTopic} counts={counts} />
+        {level !== "home" && <Breadcrumb level={level} setLevel={setLevel} mega={selectedMega} topic={selectedTopic} counts={counts} />}
         {level === "home" && <HomePage meta={meta.data} megatopics={data.megatopics} topics={data.topics} articles={data.articles} setLevel={setLevel} />}
         {level === "search" && <SearchPage filtered={filtered} />}
         {level === "macro" && <MacroPage megatopics={data.megatopics} filtered={base} corpusSize={corpusSize}

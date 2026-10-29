@@ -4,9 +4,7 @@ const { useState, useMemo } = React;
 function SectionHead({ num, title, aside }) {
   return (
     <div className="section-head">
-      <div className="section-num">§ {num}</div>
       <h2>{title}</h2>
-      {aside !== undefined && <div className="section-aside">{aside}</div>}
     </div>
   );
 }
@@ -51,22 +49,6 @@ function HomePage({ meta, megatopics, topics, articles, setLevel }) {
           <h1 style={{ maxWidth: 720 }}>{t("home.title")}</h1>
           <p className="page-dek">{t("home.dek")}</p>
         </div>
-        <div className="page-stamp">
-          <strong>{t("home.source")}</strong><br/>
-          {meta.version} · {meta.date}<br/>
-          articles · topics · megatopics
-        </div>
-      </div>
-
-      <SectionHead num="01" title={t("home.capsTitle")} />
-      <div className="cap-grid">
-        {caps.map((c, i) => (
-          <div key={i} className="cap">
-            <div className="cap-num">{String(i + 1).padStart(2, "0")} / {String(caps.length).padStart(2, "0")}</div>
-            <h3>{c.title}</h3>
-            <p>{c.body}</p>
-          </div>
-        ))}
       </div>
 
       <SectionHead num="02" title={t("home.pathsTitle")} aside="Micro → Meso → Macro" />
@@ -79,7 +61,6 @@ function HomePage({ meta, megatopics, topics, articles, setLevel }) {
                 <div className="module-sub">{p.sub}</div>
               </div>
               <div className="module-note">{p.note}</div>
-              <div className="path-note"><strong>{t("home.when")}</strong> {p.when}</div>
               <button type="button" className="btn-ed" style={{ marginTop: 14 }} onClick={() => setLevel(p.id)}>
                 {t("home.open", { level: t("level." + p.id) })}
               </button>
@@ -144,17 +125,8 @@ function MacroPage({ megatopics, filtered, corpusSize, onSelectMega, selectedMeg
     <div>
       <div className="page-header">
         <div>
-          <div className="page-kicker">{t("macro.kicker")}</div>
           <h1>{t("macro.title")}</h1>
           <p className="page-dek">{t("macro.dek")}</p>
-        </div>
-        <div className="page-stamp">
-          <strong>{t("macro.inSelection")}</strong><br/>
-          {t("unit.articles", { n: fmtInt(filtered.length) })}<br/>
-          {t("unit.megatopics", { n: megatopics.length })}<br/>
-          <br/>
-          <strong>{t("macro.sort")}</strong><br/>
-          {t("macro.sortValue")}
         </div>
       </div>
       <KpiStrip articles={filtered} corpusSize={corpusSize} />
@@ -178,7 +150,7 @@ function MacroPage({ megatopics, filtered, corpusSize, onSelectMega, selectedMeg
       <SectionHead num="02" title={t("macro.table")} aside={t("macro.clickHint")} />
 
       <div className="table-wrap">
-        <table className="ed">
+        <table className="ed tbl-macro">
           <thead>
             <tr>
               <th scope="col">#</th>
