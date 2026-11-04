@@ -2,9 +2,9 @@
   "version": "v2.0.0",
   "date": "2026-08-26",
   "source_hash": {
-    "articles_dataset_csv_md5": "ab6dea559fef9cd80f74b76100e9edf6",
-    "topics_dataset_csv_md5": "e2d9a2dce0cb88397d8c06f4642df5e8",
-    "megatopics_dataset_csv_md5": "583e971371829075ab69d49c048675c4"
+    "articles_dataset_csv_md5": "6d54b3de2c6767c26750b949c515b6af",
+    "topics_dataset_csv_md5": "fdd976d1e5de0c081624891f31e83f4e",
+    "megatopics_dataset_csv_md5": "293510ad71231b939476bc06319474ee"
   },
   "n_articles": 580,
   "n_columns": 54,

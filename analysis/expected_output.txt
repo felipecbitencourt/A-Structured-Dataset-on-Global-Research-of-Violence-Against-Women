@@ -1,0 +1,42 @@
+Corpus
+  articles: 580; years: 2012-2025
+  countries studied: 156; affiliated: 99; both: 95; studied only: 61; affiliated only: 4
+  single country: 89.8%; two or more: 10.2%; multi-continental: 3.8%
+
+Local authorship (a study of the country with an author affiliated there)
+  USA: 74 of 78 (95%)
+  KEN: 13 of 49 (27%)
+  RWA: 2 of 33 (6%)
+
+Affiliation continent x studied continent
+  pairs: 806; chi2 = 803.56, df = 16, p = 1.1e-160, V = 0.50
+  diagonal residuals: +9.5 to +13.0
+
+Intercontinental flows only (diagonal removed)
+  pairs: 314; chi2 = 33.92
+    Americas -> Europe: z = +2.26
+    Europe -> Americas: z = +2.77
+    Africa -> Americas: z = +1.86
+    Africa -> Oceania: z = +2.09
+    Asia -> Americas: z = +2.38
+    Asia -> Oceania: z = +1.74
+
+Quasi-independence
+  chi2 = 8.62, df = 11, p = 0.657
+  Europe -> Americas: z = +0.39; largest: Asia -> Oceania, z = +1.33
+
+Studied continent x megatopic
+  pairs: 634; chi2 = 62.15, df = 24, p = 3.15e-05, V = 0.157
+    Americas, M1: n = 16, z = -3.81
+    Americas, M7: n = 17, z = +2.20
+    Europe, M2: n = 16, z = +2.65
+    Oceania, M1: n = 10, z = +2.00
+
+Annual growth by megatopic (OLS of yearly article counts on year)
+  M1: beta = 0.90, p = 0.0101, R2 = 0.44
+  M2: beta = 0.62, p = 1.59e-05, R2 = 0.80
+  M3: beta = 0.82, p = 0.00101, R2 = 0.61
+  M4: beta = 0.18, p = 0.18, R2 = 0.14
+  M5: beta = 1.39, p = 5.98e-05, R2 = 0.75
+  M6: beta = 0.80, p = 0.00121, R2 = 0.60
+  M7: beta = 0.45, p = 0.000161, R2 = 0.71

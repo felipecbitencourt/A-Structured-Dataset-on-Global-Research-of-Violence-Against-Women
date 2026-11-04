@@ -1,59 +1,43 @@
 # A Structured Dataset on Global Research of Violence Against Women
 
-This repository is organized into three production modules:
+Data and code of a scoping review of the global empirical literature on violence against women: 580 studies published between 2012 and 2025 (search window 2011 to 2025), with territories studied, author affiliations and 32 topics in seven megatopics.
 
-- `topic_modeling`: NMF-based topic modeling pipeline with text preprocessing, TF-IDF vectorization, coherence search, and topic exports.
-- `ml_classification`: supervised article-screening pipeline with text preprocessing, vectorization, Logistic Regression, and incremental self-training.
-- `analytical_interface`: static HTML/JavaScript app for interactive exploration at micro, meso, and macro levels, including filtering, aggregation, and visualization.
+- Interactive platform: https://vcm.cienciaberta.com
+- Archived dataset: [Zenodo DOI of version 2.0.0, to be added after deposit]
 
-## Repository structure
+## Contents
 
-```text
-.
-|- index.html
-|- README.md
-|- .gitignore
-|- topic_modeling/
-|  |- README.md
-|  |- requirements.txt
-|  |- code/
-|  |  \- nmf.py
-|  \- docs/
-|- ml_classification/
-|  |- README.md
-|  |- requirements.txt
-|  |- code/
-|  |  \- supervised_screening_pipeline.py
-|  \- docs/
-\- analytical_interface/
-   |- index.html
-   |- styles.css
-   |- data/
-   \- js/
+| Folder | Content |
+| :--- | :--- |
+| `analytical_interface/` | Interactive platform and the data files it serves (`data/`) |
+| `docs/DATA_DICTIONARY.md` | Definition of every field |
+| `ml_classification/` | Supervised screening: final pipeline and the classifier comparison notebook |
+| `topic_modeling/` | NMF pipeline and the LDA and NMF comparison |
+| `analysis/` | Statistics reported in the manuscript, and the semantic map and figures notebook |
+
+## Reproducing the results
+
+The statistics run on the public dataset alone:
+
+```bash
+pip install -r analysis/requirements.txt
+python analysis/manuscript_statistics.py analytical_interface/data/articles_dataset.csv
 ```
 
-## GitHub Pages
+`analysis/expected_output.txt` holds the output of this command.
 
-- Landing page entrypoint: `index.html` (repository root).
-- Interactive interface entrypoint: `index.html` (root, loading assets from `analytical_interface/`).
+## What cannot be rerun from this repository
 
-## Quick local usage
+Screening, topic modelling and the semantic map need the full text of the articles, which is under publishers' copyright and is not redistributed. The scripts and notebooks that depend on it are provided to document the configuration used, and they point to the authors' working files. `topic_id` cannot be recomputed, because the input table of the original NMF run is no longer available; see the limitations in the data dictionary.
 
-Serve the repository root with a local static server:
+## Running the platform locally
 
-```powershell
+```bash
 python -m http.server 8000
 ```
 
-Then access:
+Then open http://localhost:8000/.
 
-- `http://localhost:8000/` (project landing page)
-- `http://localhost:8000/` (interactive interface)
+## Licence
 
-## Module entrypoints
-
-- Topic modeling docs: `topic_modeling/README.md`
-- Topic modeling script: `topic_modeling/code/nmf.py`
-- ML classification docs: `ml_classification/README.md`
-- ML classification script: `ml_classification/code/supervised_screening_pipeline.py`
-- Analytical interface entrypoint: `index.html`
+Code: MIT (`LICENSE`). Data: Creative Commons Attribution 4.0.
