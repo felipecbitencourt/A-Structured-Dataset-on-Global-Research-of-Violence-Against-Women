@@ -31,8 +31,8 @@
 | `researcher_country` | 580 | ISO3 codes of all countries in the author affiliations, separated by ';'. In v1.1.1 this field held the first author's country only. |
 | `researcher_continent` | 580 | Distinct continents of researcher_country. |
 | `researcher_subregion` | 580 | Distinct subregions of researcher_country. |
-| `researcher_country_primeiro` | 540 | Country of the first listed affiliation (the v1.1.1 definition of researcher_country). |
-| `author_affiliation` | 579 | Affiliation text, the evidence for the fields above. |
+| `researcher_country_first` | 540 | Country of the first listed affiliation (the v1.1.1 definition of researcher_country). |
+| `author_affiliation` | 579 | Affiliation text, the evidence for the fields above. In part of the records it ends with the country and a continent code added during coding (AF, AS, EU, SA, OC or Multi); in records whose affiliation could not be extracted, it holds only that coding or the countries studied. |
 
 ## Coordinates
 
@@ -40,7 +40,7 @@
 | :--- | ---: | :--- |
 | `latitude` | 567 | Latitude of the authors' institution, not of the country studied. Some values are country centroids. |
 | `longitude` | 567 | Longitude of the authors' institution. |
-| `coordenada_endereco` | 481 | Address resolved by the geocoder. Empty when the coordinate was not geocoded from an address. |
+| `geocoded_address` | 481 | Address resolved by the geocoder. Empty when the coordinate was not geocoded from an address. |
 
 ## Research flow
 
@@ -63,7 +63,7 @@
 | `income_group_source` | 580 | Source of income_group (World Bank OGHIST historical classification). |
 | `income_group_obs_year` | 580 | Year of income_group. |
 | `hdi` | 579 | Human Development Index. |
-| `hdi_source` | 579 | Source: 'PNUD, Relatorio de Desenvolvimento Humano 2021/22' is the UNDP Human Development Report 2021/22; 'conjunto publicado, origem nao declarada' means carried over from v1.1.1 with no declared origin. |
+| `hdi_source` | 579 | Source: 'UNDP, Human Development Report 2021/22', or 'v1.1.1 dataset, source not declared' when the value was carried over from v1.1.1 with no declared origin. |
 | `hdi_obs_year` | 577 | Year of hdi. |
 | `gender_inequality_index` | 579 | Gender Inequality Index. Carried over from v1.1.1; part of the values could not be traced to a source. |
 | `gender_inequality_index_source` | 579 | Source, with the same values as hdi_source. |

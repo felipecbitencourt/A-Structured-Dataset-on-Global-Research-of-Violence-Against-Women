@@ -1,8 +1,8 @@
 {
   "version": "v2.0.0",
-  "date": "2026-08-26",
+  "date": "2026-11-24",
   "source_hash": {
-    "articles_dataset_csv_md5": "6d54b3de2c6767c26750b949c515b6af",
+    "articles_dataset_csv_md5": "cc767c219951741beb7d96f38e1b5e99",
     "topics_dataset_csv_md5": "fdd976d1e5de0c081624891f31e83f4e",
     "megatopics_dataset_csv_md5": "293510ad71231b939476bc06319474ee"
   },
