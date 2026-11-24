@@ -2,7 +2,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 type: software
 title: "Analytical Platform and Code for the Structured Dataset on Global Research of Violence Against Women"
-version: 2.0.0
+version: 2.0.1
 license: MIT
 repository-code: "https://github.com/felipecbitencourt/A-Structured-Dataset-on-Global-Research-of-Violence-Against-Women"
 url: "https://vcm.cienciaberta.com"

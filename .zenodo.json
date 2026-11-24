@@ -2,7 +2,7 @@
   "upload_type": "software",
   "title": "Analytical Platform and Code for the Structured Dataset on Global Research of Violence Against Women",
   "description": "Analytical platform and code of a scoping review of the global empirical literature on violence against women: supervised screening and topic modelling pipelines, reproducible statistics, data dictionary and the interactive platform at https://vcm.cienciaberta.com.",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "license": "MIT",
   "access_right": "open",
   "keywords": [
