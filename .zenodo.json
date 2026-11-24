@@ -1,0 +1,35 @@
+{
+  "upload_type": "software",
+  "title": "Analytical Platform and Code for the Structured Dataset on Global Research of Violence Against Women",
+  "description": "Analytical platform and code of a scoping review of the global empirical literature on violence against women: supervised screening and topic modelling pipelines, reproducible statistics, data dictionary and the interactive platform at https://vcm.cienciaberta.com.",
+  "version": "2.0.0",
+  "license": "MIT",
+  "access_right": "open",
+  "keywords": [
+    "Violence against women",
+    "Topic modeling",
+    "Knowledge production",
+    "Research agendas",
+    "Interactive platform"
+  ],
+  "creators": [
+    {
+      "name": "Tessari Pereira, Eduarda",
+      "orcid": "0009-0000-6946-8865",
+      "affiliation": "Federal University of Rio Grande do Sul"
+    },
+    {
+      "name": "Bitencourt, Felipe Correa",
+      "orcid": "0009-0007-0704-7628",
+      "affiliation": "Federal University of Health Sciences of Porto Alegre"
+    }
+  ],
+  "related_identifiers": [
+    {
+      "identifier": "10.5281/zenodo.19572463",
+      "relation": "isSupplementTo",
+      "scheme": "doi",
+      "resource_type": "dataset"
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 Data and code of a scoping review of the global empirical literature on violence against women: 580 studies published between 2012 and 2025 (search window 2011 to 2025), with territories studied, author affiliations and 32 topics in seven megatopics.
 
 - Interactive platform: https://vcm.cienciaberta.com
-- Archived dataset: [Zenodo DOI of version 2.0.0, to be added after deposit]
+- Archived dataset: https://doi.org/10.5281/zenodo.19572463
 
 ## Contents
 

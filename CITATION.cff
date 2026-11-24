@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Analytical Platform and Code for the Structured Dataset on Global Research of Violence Against Women"
+version: 2.0.0
+license: MIT
+repository-code: "https://github.com/felipecbitencourt/A-Structured-Dataset-on-Global-Research-of-Violence-Against-Women"
+url: "https://vcm.cienciaberta.com"
+authors:
+  - family-names: Tessari Pereira
+    given-names: Eduarda
+    orcid: "https://orcid.org/0009-0000-6946-8865"
+  - family-names: Bitencourt
+    given-names: Felipe Correa
+    orcid: "https://orcid.org/0009-0007-0704-7628"
